@@ -1,0 +1,310 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<contentList>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000001" version="1">Signs of ambushers nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000002" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000003" version="1">You are being tracked by ambushers.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000004" version="1">Veteran ambushers are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000005" version="1">Hardened ambushers are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000006" version="1">Experienced ambushers stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000007" version="1">Elite ambushers are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000008" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000009" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000010" version="1">Legendary ambushers are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000011" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000012" version="1">This hunt is led by legendary ambushers.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000013" version="1">Signs of humanoids nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000014" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000015" version="1">You are being tracked by humanoids.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000016" version="1">Veteran humanoids are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000017" version="1">Hardened humanoids are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000018" version="1">Experienced humanoids stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000019" version="1">Elite humanoids are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000020" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000021" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000022" version="1">Legendary humanoids are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000023" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000024" version="1">This hunt is led by legendary humanoids.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000025" version="1">Signs of undead nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000026" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000027" version="1">You are being tracked by undead.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000028" version="1">Veteran undead are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000029" version="1">Hardened undead are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000030" version="1">Experienced undead stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000031" version="1">Elite undead are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000032" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000033" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000034" version="1">Legendary undead are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000035" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000036" version="1">This hunt is led by legendary undead.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000037" version="1">Signs of beasts nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000038" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000039" version="1">You are being tracked by beasts.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000040" version="1">Veteran beasts are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000041" version="1">Hardened beasts are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000042" version="1">Experienced beasts stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000043" version="1">Elite beasts are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000044" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000045" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000046" version="1">Legendary beasts are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000047" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000048" version="1">This hunt is led by legendary beasts.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000049" version="1">Signs of fiends nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000050" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000051" version="1">You are being tracked by fiends.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000052" version="1">Veteran fiends are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000053" version="1">Hardened fiends are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000054" version="1">Experienced fiends stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000055" version="1">Elite fiends are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000056" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000057" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000058" version="1">Legendary fiends are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000059" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000060" version="1">This hunt is led by legendary fiends.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000061" version="1">Signs of fey nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000062" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000063" version="1">You are being tracked by fey.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000064" version="1">Veteran fey are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000065" version="1">Hardened fey are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000066" version="1">Experienced fey stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000067" version="1">Elite fey are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000068" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000069" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000070" version="1">Legendary fey are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000071" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000072" version="1">This hunt is led by legendary fey.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000073" version="1">Signs of aberrations nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000074" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000075" version="1">You are being tracked by aberrations.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000076" version="1">Veteran aberrations are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000077" version="1">Hardened aberrations are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000078" version="1">Experienced aberrations stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000079" version="1">Elite aberrations are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000080" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000081" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000082" version="1">Legendary aberrations are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000083" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000084" version="1">This hunt is led by legendary aberrations.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000085" version="1">Signs of monstrosities nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000086" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000087" version="1">You are being tracked by monstrosities.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000088" version="1">Veteran monstrosities are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000089" version="1">Hardened monstrosities are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000090" version="1">Experienced monstrosities stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000091" version="1">Elite monstrosities are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000092" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000093" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000094" version="1">Legendary monstrosities are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000095" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000096" version="1">This hunt is led by legendary monstrosities.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000097" version="1">Signs of plant horrors nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000098" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000099" version="1">You are being tracked by plant horrors.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000100" version="1">Veteran plant horrors are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000101" version="1">Hardened plant horrors are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000102" version="1">Experienced plant horrors stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000103" version="1">Elite plant horrors are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000104" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000105" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000106" version="1">Legendary plant horrors are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000107" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000108" version="1">This hunt is led by legendary plant horrors.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000109" version="1">Signs of oozes nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000110" version="1">Hostile movement is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000111" version="1">You are being tracked by oozes.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000112" version="1">Veteran oozes are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000113" version="1">Hardened oozes are converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000114" version="1">Experienced oozes stalk your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000115" version="1">Elite oozes are incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000116" version="1">An elite group is moving in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000117" version="1">High-threat signatures detected.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000118" version="1">Legendary oozes are upon you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000119" version="1">A mythic threat is closing fast.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000120" version="1">This hunt is led by legendary oozes.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000121" version="1">Vines writhe nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000122" version="1">The wild itself is hunting you.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000123" version="1">Ancient roots surge toward your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000124" version="1">An elite grove predator closes in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000125" version="1">A legendary force of nature awakens.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000126" version="1">The forest answers with lethal fury.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000127" version="1">Hostile raiders shadow your path.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000128" version="1">Rough voices carry from ahead.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000129" version="1">Veteran raiders are coordinating an ambush.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000130" version="1">Seasoned fighters tighten the net.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000131" version="1">Elite war-band incoming.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000132" version="1">Disciplined killers are moving to intercept.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000133" version="1">A legendary war-chief leads the hunt.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000134" version="1">This ambush is commanded by a mythic killer.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000135" version="1">Whispers from the dark press closer.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000136" version="1">An elite aberrant mind is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000137" version="1">A legendary aberration has marked your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000138" version="1">Acid stirs beneath your footing.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000139" version="1">An elite ooze mass is sliding your way.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000140" version="1">A legendary slime tide is converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000141" version="1">Chittering echoes from every angle.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000142" version="1">An elite monstrosity pack is circling.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000143" version="1">A legendary apex predator is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000144" version="1">The dead are restless nearby.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000145" version="1">Elite undead hunters emerge from the gloom.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000146" version="1">A legendary deathbound foe is approaching.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000147" version="1">Moonrise patrols are on your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000148" version="1">An elite Moonrise strike team is mobilizing.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000149" version="1">A legendary Moonrise enforcer has joined the hunt.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000150" version="1">Moonrise dead stir in pursuit.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000151" version="1">A legendary undead champion answers Moonrise.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000152" version="1">Infernal scouts scent your trail.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000153" version="1">A legendary fiend is descending on your party.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000154" version="1">Sewers churn with movement.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000155" version="1">An elite sewer ooze mass is converging.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000156" version="1">A legendary ooze horror rises below.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000157" version="1">Something huge stalks these tunnels.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000158" version="1">An elite tunnel predator is closing in.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000159" version="1">A legendary undercity beast has your scent.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000160" version="1">Forgotten dead rise in the sewers.</content>
+	<content contentuid="h8a1b2c3dg4e5fg6a7bg8c9dg000000000161" version="1">An elite undead stalker is approaching.</content>
+	<content contentuid="h81b2236dgf65fg714eg3b48gc21e4f34f317" version="1">Veteran</content>
+	<content contentuid="h29cd218egec0eg7ec5gc73fg9d55e72e0737" version="1">Veteran-tier ambusher. Tougher than standard foes.</content>
+	<content contentuid="h5e6e0da8g9c2eg92e6g7f66g22bc305aa884" version="1">Veteran</content>
+	<content contentuid="hfd187ee3g6a89g9386g186cgd03a409bbd76" version="1">Veteran-tier ambusher. Improved damage and defenses.</content>
+	<content contentuid="ha1c7c797g5ba2gac7agbfb3gaf5cd5a75ef3" version="1">Veteran</content>
+	<content contentuid="h5804211cge6e6g7ed9g13feg6ad4825baddc" version="1">Veteran-tier ambusher. High-level veteran scaling.</content>
+	<content contentuid="h24d15948g2026g6ac2gfa9ag599517eb9b48" version="1">Elite</content>
+	<content contentuid="h2f277246g63ffgb2b9g8e2bg749f6829020e" version="1">Elite-tier ambusher. Stronger damage, armor and resilience.</content>
+	<content contentuid="h3f56d320g80a4g6c0cgaff0gf474fb57dc0b" version="1">Elite</content>
+	<content contentuid="hd9337cc2g3915g18d8gaf9fgd85839b50e19" version="1">Elite-tier ambusher. Significantly enhanced combat stats.</content>
+	<content contentuid="h04cfc9bfge307ga0ebg0693g82533ef957c6" version="1">Elite</content>
+	<content contentuid="h86aacf81g4f70g7afag02d8gc5d7832c3d87" version="1">Elite-tier ambusher. Heavy scaling for high-level encounters.</content>
+	<content contentuid="hb052a44ag41f7gedabg390ag4eac9b0979af" version="1">Legendary</content>
+	<content contentuid="h777d5eaeg6018g4f4fgda3eg32099cf1641a" version="1">Legendary-tier ambusher. Extremely dangerous and resilient.</content>
+	<content contentuid="h6a99b029gc29eg7b95gb5a3gab6cbd834e83" version="1">Legendary</content>
+	<content contentuid="ha6dfc05eg2f88gd983g56b1g77515877f49b" version="1">Legendary-tier ambusher. High-level legendary scaling.</content>
+	<content contentuid="h0d5074feg7a97g5e3ag490bg86528b07f558" version="1">Veteran (CX)</content>
+	<content contentuid="h3ccffaecg1f86g2c5bg5c14g4dda54c83894" version="1">Lighter Veteran package used when Combat Extender scaling is active.</content>
+	<content contentuid="he8abd149gb5d6g0262gc38eg0f3514336646" version="1">Veteran (CX)</content>
+	<content contentuid="h2adca8bcg6519gf2dbga34agb76827312f10" version="1">Lighter Veteran package used when Combat Extender scaling is active.</content>
+	<content contentuid="hbd8998dag6e1bgd5f5g224egd4f50a07ab23" version="1">Veteran (CX)</content>
+	<content contentuid="hc28e0e5dg7148gbec4g7bc2gca389824c7a7" version="1">Lighter Veteran package used when Combat Extender scaling is active.</content>
+	<content contentuid="hf44fcaf2g61f7gb5b6ga42age31ae27983a3" version="1">Elite (CX)</content>
+	<content contentuid="h8fb43581g878fg3401g5061ga8cbf0e83e1a" version="1">Lighter Elite package used when Combat Extender scaling is active.</content>
+	<content contentuid="he5058378gf4b9ge532g461ege76875018857" version="1">Elite (CX)</content>
+	<content contentuid="hedd23ef2g72c5g6575g5ddfg17ade4aa6d53" version="1">Lighter Elite package used when Combat Extender scaling is active.</content>
+	<content contentuid="hf00d643bg559eg5059g4255g2d0031d444b5" version="1">Elite (CX)</content>
+	<content contentuid="hef0400a7ga26ag54e2g8b54g54c8b8aa0c68" version="1">Lighter Elite package used when Combat Extender scaling is active.</content>
+	<content contentuid="h9aa2f69dga747gc7f4gd0f3g9cfa321a2a79" version="1">Legendary (CX)</content>
+	<content contentuid="hf91c2a6eg7955g12ccg3c9fg0af0751ecaa5" version="1">Lighter Legendary package used when Combat Extender scaling is active.</content>
+	<content contentuid="hc0587eb9g15b6g4633g2512gd655d3209c7b" version="1">Legendary (CX)</content>
+	<content contentuid="hc33bc63bg8ee4gcf07gcaa4gb3f2f1fb77c9" version="1">Lighter Legendary package used when Combat Extender scaling is active.</content>
+	<content contentuid="hb769cd6eg56a4g941dg07e8g4d607d452adf" version="1">Champion</content>
+	<content contentuid="heaacfd4ag4626g2017gb368gf41270601b6c" version="1">Champion scaling package. Improves survivability and damage.</content>
+	<content contentuid="he1ccac0cgf109g5113g4f78gd5925a36fa99" version="1">Champion</content>
+	<content contentuid="h1b979869g5e6ege813g1f8eg719020bc2e29" version="1">Champion scaling package. Improves survivability and damage.</content>
+	<content contentuid="h07ef7924g18cbg54b4g342cgdc2b2b028a67" version="1">Champion</content>
+	<content contentuid="hf6475f5eg48c6g7335g647ege2334d806ea6" version="1">Champion scaling package. Improves survivability and damage.</content>
+	<content contentuid="h87215ee9gbba5g7c5ag6d79g54339d0928c9" version="1">Champion (CX)</content>
+	<content contentuid="hb5cd8b7dgb6a1g5470g1f12g5ff334a21d92" version="1">Lighter champion scaling package used when Combat Extender scaling is active.</content>
+	<content contentuid="h2496a50eg1098g196fgf635g7bf483e8a860" version="1">Champion (CX)</content>
+	<content contentuid="h3575fab7g9fc7g782fg5cb6g9fb5b3582302" version="1">Lighter champion scaling package used when Combat Extender scaling is active.</content>
+	<content contentuid="he086a7cfg8703g7684g3b15g169d69a521d3" version="1">Champion (CX)</content>
+	<content contentuid="h453adaf1g2859g4ad9gaa8agd0a1a6b35e0b" version="1">Lighter champion scaling package used when Combat Extender scaling is active.</content>
+	<content contentuid="ha8347e1fg6f5cg4058g9f0cg548b778a3005" version="1">Armored</content>
+	<content contentuid="h5b06b9b8ge6f5g5ed6g56f0g429d4ef4ab66" version="1">Gains additional Armor Class and temporary hit points.</content>
+	<content contentuid="h55837d1cg049ege122gcf7bg0d727ff3f331" version="1">Brutal</content>
+	<content contentuid="h63446176g8cb1ge72cg0c05g3339a69430dc" version="1">Deals increased weapon damage.</content>
+	<content contentuid="he97cdd09g6eabgdcf5g2394gbbf3b884cc2a" version="1">Mystic</content>
+	<content contentuid="h0c04b1b7ge094g9fb0g7b72ge220cd055861" version="1">Improves spellcasting potency and saving throw difficulty.</content>
+	<content contentuid="habb2fef1g9cabgcf4eg71c3g95cf8c7e7589" version="1">Skirmisher</content>
+	<content contentuid="h41a674cfgd8cdgca0ege818g2b2deff484ec" version="1">Gains speed and mobility through momentum.</content>
+	<content contentuid="hc089671cga713geb86g2085g377afa92616c" version="1">Titanic</content>
+	<content contentuid="h84863136gd0fbg033cg3666g661cc3ca3575" version="1">Temporarily enlarges and gains extra durability.</content>
+	<content contentuid="h8f7a6c2bg4d1eg4a93g9b8fg123456789abc" version="1">Veteran</content>
+	<content contentuid="h9a8b7c6dg3e2fg4b15g8a7dg234567890def" version="1">A seasoned combatant, tougher than its kin.</content>
+	<content contentuid="hc1d2e3f4g5a6bg4c78g9d0eg345678901abc" version="1">Elite</content>
+	<content contentuid="he2f3a4b5g6c7dg4e89g0a1fg456789012def" version="1">A champion of its kind, possessing formidable power.</content>
+	<content contentuid="ha3b4c5d6g7e8fg4901g1b2cg567890123abc" version="1">Legendary</content>
+	<content contentuid="hb5c6d7e8g9f0ag4123g2d3eg678901234def" version="1">A creature of terrifying power, spoken of only in whispers.</content>
+	<content contentuid="h2f9g0h1kg5c6dg4123g7b8cg123456789abc" version="1">Ambusher</content>
+	<content contentuid="h3g0h1i2lg6d7eg4345g8c9dg234567890def" version="1">Lurks in the gloom, striking fast and bolstering itself for the fight.</content>
+	<content contentuid="h5c42d5a6g7b11g4f8ag91e4g6d8b17a3f201" version="1">Ambushed</content>
+	<content contentuid="h6d53e6b7g8c22g5a9bg02f5g7e9c28b4a302" version="1">Attack Rolls against this creature have Advantage, and it has Disadvantage on Strength and Dexterity Checks. Taking damage or receiving Help ends this condition.</content>
+	<content contentuid="h4c8e2a1gbf9dg4f8ag9a1bg6c0d1122aa10" version="1"></content>
+	<content contentuid="h7b2d9c5ga1e3g4f9bg8c2dg5e6f3344bb20" version="1"></content>
+	<content contentuid="hc7d8e9f0g1a2bg4345g3f4ag789012345abc" version="1">Aberrant Overlord</content>
+	<content contentuid="hd9e0f1a2g3b4cg4567g4a5bg890123456def" version="1">This creature's mind is a weapon, twisting reality around it.</content>
+	<content contentuid="he1f2a3b4g5c6dg4789g5b6cg901234567abc" version="1">Vengeful Alpha</content>
+	<content contentuid="hf3a4b5c6g7d8eg4901g6c7dg012345678def" version="1">The apex predator, a force of pure, untamed nature.</content>
+	<content contentuid="h1a2b3c4dg5e6fg4123g7d8eg123456789abc" version="1">Fallen Seraph</content>
+	<content contentuid="h2b3c4d5eg6f7ag4345g8e9fg234567890def" version="1">An angelic being twisted by vengeance, wielding corrupted divine power.</content>
+	<content contentuid="h3c4d5e6fg7a8bg4567g9f0ag345678901abc" version="1">Arcane Colossus</content>
+	<content contentuid="h4d5e6f7ag8b9cg4789g0a1bg456789012def" version="1">A magical automaton animated by immense and unstable power.</content>
+	<content contentuid="h5e6f7g8ag9c0dg4901g1b2cg567890123abc" version="1">Wyrm Avenger</content>
+	<content contentuid="h6f7g8h9bg0d1eg4123g2c3dg678901234def" version="1">A dragon of immense age and power, its rage like a wildfire.</content>
+	<content contentuid="h7g8h9i0cg1e2fg4345g3d4eg789012345abc" version="1">Primordial Fury</content>
+	<content contentuid="h8h9i0j1dg2f3ag4567g4e5fg890123456def" version="1">A living embodiment of raw, untamed elemental chaos.</content>
+	<content contentuid="h9i0j1k2eg3a4bg4789g5f6ag901234567abc" version="1">Hexwood Matriarch</content>
+	<content contentuid="ha0b1c2d3g4b5cg4901g6a7bg012345678def" version="1">A spiteful fey sovereign weaving hexes, glamour, and malice through the wilds.</content>
+	<content contentuid="hb1c2d3e4g5c6dg4123g7b8cg123456789abc" version="1">Infernal Executioner</content>
+	<content contentuid="hc2d3e4f5g6d7eg4345g8c9dg234567890def" version="1">A denizen of the hells, sent to claim souls for its master.</content>
+	<content contentuid="hd3e4f5g6g7e8fg4567g9d0ag345678901abc" version="1">Titan Crusher</content>
+	<content contentuid="he4f5g6h7g8f9ag4789g0e1bg456789012def" version="1">A giant of immense strength, its footsteps shaking the very earth.</content>
+	<content contentuid="hf5g6h7i8g9a0bg4901g1f2cg567890123abc" version="1">Champion Hunter</content>
+	<content contentuid="h1g2h3i4jg0b1cg4123g2a3dg678901234def" version="1">A legendary warrior whose skill in battle is unmatched.</content>
+	<content contentuid="h2h3i4j5kg1c2dg4345g3b4eg789012345abc" version="1">Alpha Predator</content>
+	<content contentuid="h3i4j5k6lg2d3eg4567g4c5fg890123456def" version="1">A bizarre and terrifying creature, the pinnacle of its unnatural evolution.</content>
+	<content contentuid="h4j5k6l7mg3e4fg4789g5d6ag901234567abc" version="1">Primordial Sludge</content>
+	<content contentuid="h5k6l7m8ng4f5ag4901g6e7bg012345678def" version="1">A colossal, corrosive ooze that dissolves everything in its path.</content>
+	<content contentuid="h6l7m8n9og5a6bg4123g7f8cg123456789abc" version="1">Nature's Wrath</content>
+	<content contentuid="h7m8n9o0pg6b7cg4345g8a9dg234567890def" version="1">The vengeful will of nature given form, a force of unstoppable growth.</content>
+	<content contentuid="h8n9o0p1qg7c8dg4567g9b0ag345678901abc" version="1">Grave Tyrant</content>
+	<content contentuid="h9o0p1q2rg8d9eg4789g0c1bg456789012def" version="1">An undead warlord animated by relentless necrotic will and ancient hatred.</content>
+	<content contentuid="ha1p2q3r4g9e0fg4901g1d2cg567890123abc" version="1">Champion Type: Construct</content>
+	<content contentuid="hb2q3r4s5g0f1ag4123g2e3dg678901234def" version="1">Empowered by arcane power.</content>
+	<content contentuid="hc3r4s5t6g1a2bg4345g3f4ag789012345abc" version="1">Champion Type: Fey</content>
+	<content contentuid="hd4s5t6u7g2b3cg4567g4a5bg890123456def" version="1">Empowered by arcane power.</content>
+	<content contentuid="he5t6u7v8g3c4dg4789g5b6cg901234567abc" version="1">Champion Type: Beast</content>
+	<content contentuid="hf6u7v8w9g4d5eg4901g6c7dg012345678def" version="1">Empowered by arcane power.</content>
+	<content contentuid="h7v8w9x0ag5e6fg4123g7d8eg123456789abc" version="1">Champion Type: Undead</content>
+	<content contentuid="h8w9x0y1bg6f7ag4345g8e9fg234567890def" version="1">Empowered by arcane power.</content>
+	<content contentuid="h9x0y1z2cg7a8bg4567g9f0ag345678901abc" version="1">Champion Type: Aberration</content>
+	<content contentuid="ha1y2z3adg8b9cg4789g0a1bg456789012def" version="1">Empowered by arcane power.</content>
+	<content contentuid="hb2z3a4beg9c0dg4901g1b2cg567890123abc" version="1">Champion Type: Elemental</content>
+	<content contentuid="hc3a4b5cfg0d1eg4123g2c3dg678901234def" version="1">Empowered by arcane power.</content>
+	<content contentuid="hd4b5c6dgg1e2fg4345g3d4eg789012345abc" version="1">Champion Type: Dragon</content>
+	<content contentuid="he5c6d7ehg2f3ag4567g4e5fg890123456def" version="1">Empowered by arcane power.</content>
+	<content contentuid="hf6d7e8fig3a4bg4789g5f6ag901234567abc" version="1">Champion Type: Undead</content>
+	<content contentuid="h1e8f9g0jg4b5cg4901g6a7bg012345678def" version="1">Empowered by dark necromancy.</content>
+	<content contentuid="hfea1001ga001gb001gc001gd001ge001" version="1">The Hunt</content>
+	<content contentuid="hfea1002ga001gb001gc001gd001ge002" version="1">Something is tracking the party through hostile ground. Stay vigilant.</content>
+	<content contentuid="hfea1003ga001gb001gc001gd001ge003" version="1">The danger is escalating. Creatures remember your violence.</content>
+	<content contentuid="hfea1004ga001gb001gc001gd001ge004" version="1">Track each creature type's standing in your hunt ledger.</content>
+	<content contentuid="hfea1005ga001gb001gc001gd001ge005" version="1">A new danger stalks your vulnerable moments.</content>
+	<content contentuid="hfea1006ga001gb001gc001gd001ge006" version="1">The hunt closes in while the party regroups.</content>
+	<content contentuid="hfea1007ga001gb001gc001gd001ge007" version="1">The hunt has begun.</content>
+	<content contentuid="hfea1008ga001gb001gc001gd001ge008" version="1">Escalation dormant.</content>
+	<content contentuid="hfea1009ga001gb001gc001gd001ge009" version="1">Escalation marked.</content>
+	<content contentuid="hfea1010ga001gb001gc001gd001ge010" version="1">Escalation wary.</content>
+	<content contentuid="hfea1011ga001gb001gc001gd001ge011" version="1">Escalation hostile.</content>
+	<content contentuid="hfea1012ga001gb001gc001gd001ge012" version="1">Escalation vengeful.</content>
+	<content contentuid="hfea1013ga001gb001gc001gd001ge013" version="1">A champion is now hunting you.</content>
+	<content contentuid="hfea1014ga001gb001gc001gd001ge014" version="1">Escalation has been reset.</content>
+	<content contentuid="hfea1015ga001gb001gc001gd001ge015" version="1">Standing: Neutral</content>
+	<content contentuid="hfea1016ga001gb001gc001gd001ge016" version="1">Standing: Marked</content>
+	<content contentuid="hfea1017ga001gb001gc001gd001ge017" version="1">Standing: Wary</content>
+	<content contentuid="hfea1018ga001gb001gc001gd001ge018" version="1">Standing: Hostile</content>
+	<content contentuid="hfea1019ga001gb001gc001gd001ge019" version="1">Standing: Vengeful</content>
+	<content contentuid="hfea1020ga001gb001gc001gd001ge020" version="1">Standing: Reset</content>
+	<content contentuid="hfea1021ga001gb001gc001gd001ge021" version="1">Escaping</content>
+	<content contentuid="hfea1022ga001gb001gc001gd001ge022" version="1">This creature is preparing to flee.</content>
+	<content contentuid="h63b0e40eg6c0ag4d86gb8f5g5d2f58f91c91" version="1">You are hunted.&#10;&#10;Stay vigilant.</content>
+	<content contentuid="h4c9e9b13g2f74g4f87ga1f6g8fd97c4e4a10" version="1">You are hunted.&#10;&#10;Every kill leaves a trail. Slay too many of one kind, and they will hunt you in return.</content>
+	<content contentuid="h5d0fa721g7ae6g41e6g8e2ag11ad39c77921" version="1">No place is truly safe.&#10;&#10;Those hunting you may strike when the party is exposed.&#10;Stay wary in hostile ground.</content>
+	<content contentuid="h7f6f9f46g0d90g4a9egb7d9g8a7f57c96d30" version="1">The %s are growing wary of your presence...</content>
+	<content contentuid="h9a8ed1a4g77bcg4f2fg9f79g1b7da6608efc" version="1">The %s are hunting you now. Their champions will not forgive.</content>
+	<content contentuid="h6d42cc0bg2576g49bfg8bc6g2efafac71f7d" version="1">You have gone too far. A %s champion rises to end you.</content>
+</contentList>
+
+
+
+
+
+
+
+

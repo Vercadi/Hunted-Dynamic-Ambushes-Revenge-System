@@ -1,0 +1,42 @@
+-- EnemyAmbush_Data_Champions_Vanilla.lua
+-- Vanilla champion entries and by-type map.
+-- F1 champion gating now uses a conservative threat gate:
+-- - minPartyLevel is set against the observed scaled in-game threat, not just the raw template level
+-- - maxPartyLevel is used only on the two low-level rare variants so they do not dilute late-game rolls
+
+local Champions = {}
+
+Champions.List = {
+    {template = "6708ae4b-8dcf-4812-bdba-fd5fe1c343f6", name = "Planar Ally: Cambion", creatureType = "Fiend", level = 9, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "d9889d28-ca01-41f2-973e-275bbc8e2fe1", name = "Wild Magic Cambion", creatureType = "Fiend", level = 6, weight = 0.1, minPartyLevel = 4, maxPartyLevel = 8, status = "WILD_MAGIC", championOnly = true},
+    {template = "2337e270-3c93-4088-8439-7c7450b99179", name = "Summon Deva", creatureType = "Celestial", level = 10, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "49044a53-3559-4bd5-8a2b-174dff98b0a3", name = "Orthon", creatureType = "Fiend", level = 8, weight = 0.05, minPartyLevel = 6, status = "", championOnly = true},
+    {template = "44b9e114-b5ab-4d64-bb91-eb9114d2fd3a", name = "Dark Justiciar Giant", creatureType = "Humanoid", level = 8, weight = 1, minPartyLevel = 6, status = "", championOnly = true},
+    {template = "89419ac3-95d1-4c90-9a29-7b6445acb270", name = "Dark Justiciar Boss", creatureType = "Humanoid", level = 8, weight = 1, minPartyLevel = 6, status = "", championOnly = true},
+    {template = "2751f474-424e-4693-85dc-cb5bebbba259", name = "Beholder Tyrant", creatureType = "Aberration", level = 10, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "319efbbe-f9f3-4584-804e-3e17d47d1136", name = "Spectator", creatureType = "Aberration", level = 8, weight = 0.35, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "47a6ceac-0788-4a51-a96e-3eabf7c11768", name = "Alioramus Alpha", creatureType = "Beast", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "4d5fbc43-408c-4ec8-acf6-9c8d8aa456d6", name = "Adamantine Golem", creatureType = "Construct", level = 10, weight = 1, minPartyLevel = 9, status = "", championOnly = true},
+    {template = "88a6c664-877c-4d6e-81ad-dd377df2634e", name = "Fire Elemental Prime", creatureType = "Elemental", level = 9, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "c6ad9c71-43a9-410b-8e3e-219a0a7fddc8", name = "Planar Ally (Djinni)", creatureType = "Elemental", level = 6, weight = 0.1, minPartyLevel = 4, maxPartyLevel = 8, status = "", championOnly = true},
+    {template = "d4edf374-6efe-463f-8899-889db26dee4e", name = "Green Hag Matriarch", creatureType = "Fey", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "bc9fb0ff-18f1-4622-8260-d872e21a5b75", name = "Ogre Brute Champion", creatureType = "Giant", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "4b3c6cdc-95da-476d-8ac7-c8d012ccf3b2", name = "Ochre Jelly Elder", creatureType = "Ooze", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "ecfc157f-b689-47ac-8dcb-22fdb6861c01", name = "Shadow-Cursed Shambling Mound", creatureType = "Plant", level = 9, weight = 1, minPartyLevel = 10, status = "SCL_SHADOW_CURSE", championOnly = true},
+    {template = "8c7f60a2-c0de-4292-b443-71297cd5d183", name = "Hollyphant", creatureType = "Celestial", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
+    {template = "368935f0-4a15-4122-b101-9174dee70163", name = "Skeletal Dragon", creatureType = "Dragon", level = 9, weight = 0.03, minPartyLevel = 9, status = "", championOnly = true},
+    {template = "64383f18-9830-40c2-8681-657cf36afc05", name = "Red Dragon", creatureType = "Dragon", level = 12, weight = 1, minPartyLevel = 12, status = "", championOnly = true},
+    {template = "867c3061-624e-4b02-babb-a23e743fb5d3", name = "Minotaur", creatureType = "Monstrosity", level = 8, weight = 0.4, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "6047fffd-f7d3-4956-8b7a-ef82c08f8867", name = "Phase Spider Matriarch", creatureType = "Monstrosity", level = 12, weight = 1, minPartyLevel = 11, status = "", championOnly = true},
+    {template = "545bcd10-d1fb-43d7-b933-1e946f5d3415", name = "Skeleton Giant (Apostate)", creatureType = "Undead", level = 8, weight = 0.4, minPartyLevel = 8, status = "", championOnly = true},
+    {template = "0ae246ad-0b76-4019-b802-8553f42754a7", name = "Oathbreaker Knight Champion", creatureType = "Undead", level = 11, weight = 1, minPartyLevel = 11, status = "", championOnly = true},
+}
+
+Champions.ByType = {}
+for _, c in ipairs(Champions.List) do
+    local ct = c.creatureType or "Humanoid"
+    Champions.ByType[ct] = Champions.ByType[ct] or {}
+    table.insert(Champions.ByType[ct], c)
+end
+
+return Champions

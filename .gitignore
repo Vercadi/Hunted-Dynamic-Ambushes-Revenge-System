@@ -1,0 +1,8 @@
+*.zip
+*.pak
+dist/
+modpage items/
+*.tmp
+*.bak
+*.lsx.bak
+*.log

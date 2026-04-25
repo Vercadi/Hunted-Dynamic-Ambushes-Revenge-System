@@ -35,7 +35,7 @@ This repository contains source files. Packaged release archives are distributed
 - `docs/COMPATIBILITY.md` - compatibility notes.
 - `docs/CONFIG.md` - configuration notes.
 - `docs/TROUBLESHOOTING.md` - support and diagnostics.
-- `docs/Changelog.md` - development changelog.
+- `docs/CHANGELOG.md` - concise public changelog.
 
 ## API
 

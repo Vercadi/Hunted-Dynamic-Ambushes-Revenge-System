@@ -497,11 +497,11 @@ function EA_DumpState()
         "Profile=" .. EA_TelemetryFriendlyProfile(),
         "FodderCurve=7+:50%,10+:30%,12+:10%",
         "ArrivalCuePolicy=" .. EA_TelemetryFriendlyArrivalCuePolicy(),
-        "ArrivalCueScale%=" .. tostring(EA_TelemetrySetting("MCM_ArrivalCueChanceScale", 100)),
+        "ArrivalCueScale%=100(fixed)",
         "PlacementMode=" .. EA_TelemetryFriendlyPlacementMode(),
         "SkipBeachTutorial=" .. tostring(EA_TelemetrySetting("MCM_SkipBeachTutorialAmbush", false)),
         "XP%=" .. tostring(EA_TelemetrySetting("MCM_AmbushXPPercent", 10)),
-        "LootOff=" .. tostring(EA_TelemetrySetting("MCM_DisableAmbushLoot", true))
+        "LootOff=" .. tostring(EA_TelemetrySetting("MCM_DisableAmbushLoot", false))
     )
 
     if PerformanceMetrics.lastError then

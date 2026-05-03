@@ -18,7 +18,14 @@ function M.Build(deps)
     local EA_IsCXMode = deps.EA_IsCXMode or function() return false end
     local DebugPrint = deps.DebugPrint or function() end
     local EA_GetUseCompositionGuards = deps.EA_GetUseCompositionGuards
-    local EA_GetSettingBool = deps.EA_GetSettingBool or function(_, fallback) return fallback == true end
+    local EA_GetSettingBoolRaw = deps.EA_GetSettingBool or function(_, fallback) return fallback == true end
+    local function EA_GetSettingBool(settingId, fallback)
+        if settingId == "MCM_DebugMode" then
+            return EA_GetSettingBoolRaw("MCM_EnableDebugLogging", false) == true
+                or EA_GetSettingBoolRaw("MCM_DebugMode", false) == true
+        end
+        return EA_GetSettingBoolRaw(settingId, fallback)
+    end
     local EA_GetSpawnPlacementMode = deps.EA_GetSpawnPlacementMode or (EA and EA["EA_GetSpawnPlacementMode"]) or function() return "AUTO" end
     local EA_GetBalanceProfile = deps.EA_GetBalanceProfile
     local EA_GetPresetHiddenBalanceKnobs = deps.EA_GetPresetHiddenBalanceKnobs or (EA and EA["EA_GetPresetHiddenBalanceKnobs"]) or function() return nil end
@@ -87,6 +94,35 @@ local function EA_DowngradeTier(tier, steps)
     local down = tonumber(steps) or 1
     local target = math.max(1, idx - down)
     return EA_TIER_FROM_INDEX[target] or "COMMON"
+end
+
+local function EA_GetSupportBaseTier(topTier, presetHidden, playerLevel, partySize)
+    local top = EA_NormalizeTierLabel(topTier)
+    local base = EA_DowngradeTier(top, 1)
+    if top == "COMMON" then
+        return base, base, nil
+    end
+
+    local hidden = presetHidden or {}
+    local bias = string.upper(tostring(hidden.tierBias or "COMMON_VETERAN_BASELINE"))
+    local level = math.max(1, math.min(20, math.floor(tonumber(playerLevel) or 1)))
+    local size = math.max(1, math.min(12, math.floor(tonumber(partySize) or 4)))
+
+    if bias == "ELITE_LEGENDARY_LEANING" and level >= 8 and size >= 4 then
+        if top == "VETERAN" then
+            return "VETERAN", base, "hunted_veteran_floor"
+        end
+        return base, base, nil
+    end
+
+    if bias == "VETERAN_ELITE_LEANING" and level >= 10 and size >= 5 then
+        if top == "VETERAN" then
+            return "VETERAN", base, "relentless_veteran_floor"
+        end
+        return base, base, nil
+    end
+
+    return base, base, nil
 end
 
 local function EA_GetBaseTierTargetAdjustment(tier)
@@ -253,7 +289,6 @@ local function ExecuteAmbushSpawn(character, isLongRest, playerLevel, pointBudge
   end
 
 local topTier = EA_NormalizeTierLabel((ambushRoll and (ambushRoll.tier or ambushRoll.category)) or "COMMON")
-local supportTier = EA_DowngradeTier(topTier, 1)
 local leaderSpawned = false
 local useCompositionGuards = true
 local balanceProfile = "BG3_12"
@@ -377,6 +412,19 @@ end
   partySizeNow = math.max(1, math.min(12, math.floor(partySizeNow)))
   local levelNow = tonumber(playerLevel) or 1
   levelNow = math.max(1, math.min(20, math.floor(levelNow)))
+  local supportTier, supportTierDefault, supportTierFloorReason = EA_GetSupportBaseTier(topTier, presetHidden, levelNow, partySizeNow)
+  if supportTierFloorReason and EA_GetSettingBool("MCM_DebugMode", false) then
+      DebugPrint(string.format(
+          "[TierMix] support floor reason=%s bias=%s top=%s base=%s resolved=%s level=%d party=%d",
+          tostring(supportTierFloorReason),
+          tostring(presetHidden.tierBias),
+          tostring(topTier),
+          tostring(supportTierDefault),
+          tostring(supportTier),
+          levelNow,
+          partySizeNow
+      ))
+  end
   if partySizeNow <= 2 and levelNow <= 2 and topTier ~= "COMMON" then
       DebugPrint(string.format(
           "[TierSafety] ExecuteAmbushSpawn forcing COMMON (level=%d size=%d rolled=%s)",

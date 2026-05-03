@@ -192,15 +192,14 @@ EnemyAmbush.SettingsDefaults = EnemyAmbush.SettingsDefaults or {
     ["MCM_CampAmbushes"]             = false,
     ["MCM_ApplyPartySurprised"]      = true,
     ["MCM_EnableTimeInDangerPressure"] = true,
-    ["MCM_ShowUINotifications"]      = true,
-    ["MCM_ShowAmbushWarningNotifications"] = true,
+    ["MCM_ShowUINotifications"]      = false,
+    ["MCM_ShowAmbushWarningNotifications"] = false,
     ["MCM_ShowChampionArrivalPopup"] = false,
     ["MCM_ArrivalCuePolicy"]         = "BALANCED",
-    ["MCM_ArrivalCueChanceScale"]    = 100,
     ["MCM_SpawnPlacementMode"]       = "AUTO",
 
     ["MCM_EnableReputation"]         = true,
-    ["MCM_ShowReputationWarnings"]   = true,
+    ["MCM_ShowReputationWarnings"]   = false,
     ["MCM_ReputationDecayRate"]      = 0.5,
 
     ["MCM_PointBudget"]              = 0,
@@ -210,10 +209,11 @@ EnemyAmbush.SettingsDefaults = EnemyAmbush.SettingsDefaults or {
     ["MCM_BalanceProfile"]           = "BG3_12",
 
     -- Keep raw reward defaults aligned with the current shipped default preset (Marked).
-    ["MCM_DisableAmbushLoot"]        = true,
-    ["MCM_AllowChampionLoot"]        = false,
+    ["MCM_DisableAmbushLoot"]        = false,
+    ["MCM_AllowChampionLoot"]        = true,
     ["MCM_AmbushXPPercent"]          = 30,
 
+    ["MCM_EnableDebugLogging"]       = false,
     ["MCM_DebugMode"]                = false,
     ["MCM_RobustMode"]               = false,
 
@@ -228,10 +228,10 @@ EnemyAmbush.SettingsDefaults = EnemyAmbush.SettingsDefaults or {
     ["MCM_QuickTestMode"]            = false,
     ["MCM_SkipBeachTutorialAmbush"]  = false,
     ["MCM_EnableAmbusherEscape"]     = true,
-    ["MCM_EscapeStartTurn"]          = 5,
+    ["MCM_EscapeStartTurn"]          = 6,
     ["MCM_EscapeDC"]                 = 14,
     ["MCM_EscapeHPThreshold"]        = 50,
-    ["MCM_EscapeMaxPerCombat"]       = 2,
+    ["MCM_EscapeMaxPerCombat"]       = 1,
 }
 
 local EA_SETTINGS  = EnemyAmbush.Settings
@@ -487,6 +487,7 @@ local EA_OWNER_BOOL_IDS = {
     "MCM_UseCompositionGuards",
     "MCM_DisableAmbushLoot",
     "MCM_AllowChampionLoot",
+    "MCM_EnableDebugLogging",
     "MCM_DebugMode",
     "MCM_RobustMode",
     "MCM_EnableAmbushCooldown",
@@ -500,7 +501,6 @@ local EA_OWNER_NUMBER_DEFAULTS = {
     ["MCM_PointBudget"] = 0,
     ["MCM_AmbushIntensity"] = 0.90,
     ["MCM_AmbushXPPercent"] = 30,
-    ["MCM_ArrivalCueChanceScale"] = 100,
     ["MCM_AmbushCooldownMinutes"] = 45,
     ["MCM_AmbushChanceShortPct"] = 5,
     ["MCM_AmbushChanceLongPct"] = 15,
@@ -508,10 +508,10 @@ local EA_OWNER_NUMBER_DEFAULTS = {
     ["MCM_ShortRestDelayMaxMinutes"] = 10,
     ["MCM_LongRestDelayMinMinutes"] = 2,
     ["MCM_LongRestDelayMaxMinutes"] = 20,
-    ["MCM_EscapeStartTurn"] = 5,
+    ["MCM_EscapeStartTurn"] = 6,
     ["MCM_EscapeDC"] = 14,
     ["MCM_EscapeHPThreshold"] = 50,
-    ["MCM_EscapeMaxPerCombat"] = 2,
+    ["MCM_EscapeMaxPerCombat"] = 1,
 }
 
 local EA_OWNER_STRING_DEFAULTS = {
@@ -556,6 +556,7 @@ local function EA_WriteOwnerCacheBackToSettings()
 
     -- Legacy cleanup: removed setting; ignore stale values from older saves.
     EA_SETTINGS["MCM_AdvancedFollowsPreset"] = nil
+    EA_SETTINGS["MCM_ArrivalCueChanceScale"] = nil
     EnemyAmbush.SettingsSnapshot = EA_SETTINGS
 end
 
@@ -621,7 +622,8 @@ EA_NormalizeMCM()
 
 -- Debug helpers (still use the locals above)
 function IsDebug()
-    return EA_GetOwnerCachedSetting("MCM_DebugMode", false) == true
+    return EA_GetOwnerCachedSetting("MCM_EnableDebugLogging", false) == true
+        or EA_GetOwnerCachedSetting("MCM_DebugMode", false) == true
 end
 
 DebugPrint = function(...)
@@ -647,8 +649,8 @@ EA_PRESETS = (MCMContract and MCMContract.PRESETS) or {
         enableAmbusherEscape = true,
         escapeStartTurn = 6,
         escapeDC = 12,
-        escapeHPThreshold = 45,
-        escapeMaxPerCombat = 1,
+        escapeHPThreshold = 55,
+        escapeMaxPerCombat = 2,
         vengefulMult = 0.55,
         xpPct = 100,
         disableLoot = false,
@@ -667,14 +669,14 @@ EA_PRESETS = (MCMContract and MCMContract.PRESETS) or {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 5,
+        escapeStartTurn = 6,
         escapeDC = 14,
         escapeHPThreshold = 50,
-        escapeMaxPerCombat = 2,
+        escapeMaxPerCombat = 1,
         vengefulMult = 0.70,
         xpPct = 30,
-        disableLoot = true,
-        allowChampionLoot = false,
+        disableLoot = false,
+        allowChampionLoot = true,
     },
     Relentless = {
         shortChancePct = 7,
@@ -689,14 +691,14 @@ EA_PRESETS = (MCMContract and MCMContract.PRESETS) or {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 5,
-        escapeDC = 15,
-        escapeHPThreshold = 60,
-        escapeMaxPerCombat = 2,
+        escapeStartTurn = 7,
+        escapeDC = 16,
+        escapeHPThreshold = 45,
+        escapeMaxPerCombat = 1,
         vengefulMult = 0.90,
         xpPct = 20,
-        disableLoot = true,
-        allowChampionLoot = false,
+        disableLoot = false,
+        allowChampionLoot = true,
     },
     Hunted = {
         shortChancePct = 9,
@@ -711,10 +713,10 @@ EA_PRESETS = (MCMContract and MCMContract.PRESETS) or {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 4,
-        escapeDC = 16,
-        escapeHPThreshold = 70,
-        escapeMaxPerCombat = 3,
+        escapeStartTurn = 7,
+        escapeDC = 17,
+        escapeHPThreshold = 40,
+        escapeMaxPerCombat = 1,
         vengefulMult = 1.10,
         xpPct = 10,
         disableLoot = true,
@@ -724,6 +726,10 @@ EA_PRESETS = (MCMContract and MCMContract.PRESETS) or {
 
 function EA_IsAdvancedMode()
     return EA_GetOwnerCachedSetting("MCM_AdvancedMode", false) == true
+end
+
+local function EA_IsAdvancedDebugMode()
+    return EA_IsAdvancedMode() and EA_GetOwnerCachedSetting("MCM_DebugMode", false) == true
 end
 
 local function EA_IsBasePresetKey(key)
@@ -946,8 +952,13 @@ function EA_SyncAdvancedFromPresetPersisted()
     for id, val in pairs(updates) do
         EA_RegisterPresetSyncWrite(id, val)
 
-        -- If BG3MCM supports a setter, this will also update UI + persist.
-        if MCM then
+        -- Only ask BG3MCM to persist settings that are present in the release
+        -- blueprint. Hidden preset-owned knobs are runtime-owned here.
+        local canWriteMCM = true
+        if MCMContract and type(MCMContract.IsBlueprintSetting) == "function" then
+            canWriteMCM = MCMContract.IsBlueprintSetting(id) == true
+        end
+        if canWriteMCM and MCM then
             if type(MCM.Set) == "function" then
                 pcall(MCM.Set, id, val, ModuleUUID, true)
             end
@@ -1001,7 +1012,9 @@ function EA_GetArrivalCuePolicyLabel(value)
 end
 
 function EA_GetArrivalCueChanceScale()
-    return tonumber(EA_GetOwnerCachedSetting("MCM_ArrivalCueChanceScale", 100)) or 100
+    -- Release MCM keeps arrival cue tuning to policy only; ignore stale
+    -- hidden values from builds that exposed a chance-scale slider.
+    return 100
 end
 
 function EA_GetSpawnPlacementMode()
@@ -1101,7 +1114,7 @@ end
 
 function EA_GetEffectiveAllowChampionLoot()
     if EA_IsAdvancedMode() then
-        return EA_GetOwnerCachedSetting("MCM_AllowChampionLoot", false) == true
+        return EA_GetOwnerCachedSetting("MCM_AllowChampionLoot", true) == true
     end
     return EA_GetPreset().allowChampionLoot == true
 end
@@ -1142,7 +1155,7 @@ function EA_GetRestAmbushChance(isLongRest)
     if EA_IsQuickTestMode() then
         return 1.0
     end
-    if EA_IsAdvancedMode() then
+    if EA_IsAdvancedDebugMode() then
         if isLongRest then
             return EA_ClampPercentToUnit(EA_GetOwnerCachedSetting("MCM_AmbushChanceLongPct", 15), 15)
         end
@@ -1158,7 +1171,7 @@ function EA_GetRestDelayWindowMinutes(isLongRest)
 
     local minMinutes = 0
     local maxMinutes = 0
-    if EA_IsAdvancedMode() then
+    if EA_IsAdvancedDebugMode() then
         if isLongRest then
             minMinutes = EA_ClampDelayMinutes(EA_GetOwnerCachedSetting("MCM_LongRestDelayMinMinutes", 2), 2)
             maxMinutes = EA_ClampDelayMinutes(EA_GetOwnerCachedSetting("MCM_LongRestDelayMaxMinutes", 20), 20)

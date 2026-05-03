@@ -284,14 +284,9 @@ function M.Build(deps)
     end
 
     local function EA_GetArrivalCueChanceScale()
-        local scale = 100
-        if type(EA_GetSettingFromSnapshot) == "function" then
-            local ok, out = pcall(EA_GetSettingFromSnapshot, "MCM_ArrivalCueChanceScale", scale)
-            if ok and tonumber(out) ~= nil then
-                scale = tonumber(out)
-            end
-        end
-        return tonumber(EA_NormalizeContractValue("MCM_ArrivalCueChanceScale", scale, 100)) or 100
+        -- Chance scaling was removed from the release MCM. Keep this at the
+        -- authored tier table value so old hidden settings cannot affect play.
+        return 100
     end
 
     local function EA_GetArrivalCuePolicy()
@@ -629,7 +624,11 @@ function M.Build(deps)
     local EA_WARNING_QUESTMESSAGE_MAX_MS = 5200
 
     local function EA_ShouldShowNotificationChannel(channelSettingId)
-        if not EA_GetSettingBool("MCM_ShowUINotifications", true) then
+        -- Retired popup warnings stay unavailable to players until MazzleDocs journal support replaces them.
+        if not EA_IsDebugMode() then
+            return false
+        end
+        if not EA_GetSettingBool("MCM_ShowUINotifications", false) then
             return false
         end
         if not channelSettingId or channelSettingId == "" then

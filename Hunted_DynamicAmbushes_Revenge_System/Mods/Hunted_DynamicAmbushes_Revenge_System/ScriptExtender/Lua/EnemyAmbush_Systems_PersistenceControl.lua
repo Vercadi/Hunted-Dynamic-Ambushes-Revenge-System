@@ -36,6 +36,7 @@ function M.Build(deps)
 
     local EA_PENDING_CAP = tonumber(deps.EA_PENDING_CAP) or 80
     local EA_PENDING_TTL_MS = tonumber(deps.EA_PENDING_TTL_MS) or 120000
+    local EA_REST_DEFERRED_TTL_MS = tonumber(deps.EA_REST_DEFERRED_TTL_MS) or (30 * 60 * 1000)
     local EA_REST_RETRY_DELAY_MS = tonumber(deps.EA_REST_RETRY_DELAY_MS) or 30000
     local TIMER_PREFIX_REST_DEFER = tostring(deps.TIMER_PREFIX_REST_DEFER or "EA_REST_DEFER_")
     local EA_PENDING_RELAUNCH_RETRY_MAX = tonumber(deps.EA_PENDING_RELAUNCH_RETRY_MAX) or 20
@@ -189,7 +190,9 @@ function M.Build(deps)
                     if data.kind == "SPAWN_QUEUE" then
                         ttlMs = math.max(ttlMs, 15 * 60 * 1000)
                     elseif data.kind == "REST_DEFERRED" then
-                        ttlMs = nil
+                        -- Rest-deferred entries are protected from cap eviction below while
+                        -- valid, but must not survive indefinitely across old save/load cycles.
+                        ttlMs = math.max(ttlMs, EA_REST_DEFERRED_TTL_MS)
                     end
                     if ttlMs and age > ttlMs then
                         if EA_IsFreshDelayedSpawnTimer(timer, data.kind) then

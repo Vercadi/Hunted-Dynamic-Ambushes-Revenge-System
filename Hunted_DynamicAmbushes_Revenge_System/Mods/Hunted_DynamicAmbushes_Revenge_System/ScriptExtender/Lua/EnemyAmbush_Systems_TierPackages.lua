@@ -336,13 +336,13 @@ function M.Build(deps)
                 end
             else
                 if statusThreatLevel >= 15 then
-                    commonBoosts = "IncreaseMaxHP(150%);TemporaryHP(34);ArmorClass(1);WeaponDamage(1)"
+                    commonBoosts = "IncreaseMaxHP(200%);TemporaryHP(52);AC(1);WeaponDamage(2, Force);DamageBonus(1);RollBonus(Attack,1);RollBonus(MeleeSpellAttack,1);RollBonus(RangedSpellAttack,1)"
                 elseif statusThreatLevel >= 11 then
-                    commonBoosts = "IncreaseMaxHP(118%);TemporaryHP(26);WeaponDamage(1)"
+                    commonBoosts = "IncreaseMaxHP(160%);TemporaryHP(40);WeaponDamage(2, Force);DamageBonus(1);RollBonus(Attack,1);RollBonus(MeleeSpellAttack,1);RollBonus(RangedSpellAttack,1)"
                 elseif statusThreatLevel >= 7 then
-                    commonBoosts = "IncreaseMaxHP(82%);TemporaryHP(18)"
+                    commonBoosts = "IncreaseMaxHP(125%);TemporaryHP(28);WeaponDamage(1, Force);DamageBonus(1);RollBonus(Attack,1)"
                 elseif statusThreatLevel >= 5 then
-                    commonBoosts = "IncreaseMaxHP(70%);TemporaryHP(16);WeaponDamage(1)"
+                    commonBoosts = "IncreaseMaxHP(80%);TemporaryHP(18);WeaponDamage(1, Force);DamageBonus(1)"
                 else
                     commonBoosts = "IncreaseMaxHP(30%);TemporaryHP(8)"
                 end

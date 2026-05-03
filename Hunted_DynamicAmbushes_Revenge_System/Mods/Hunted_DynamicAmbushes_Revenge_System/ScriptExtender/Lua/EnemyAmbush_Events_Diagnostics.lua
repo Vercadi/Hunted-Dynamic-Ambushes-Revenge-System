@@ -384,8 +384,9 @@ function M.Build(deps)
                 end
             end
 
-            local repUiEnabled = EA_GetSettingBoolEvent("MCM_ShowUINotifications", true)
-                and EA_GetSettingBoolEvent("MCM_ShowReputationWarnings", true)
+            local repUiEnabled = EA_GetSettingBoolEvent("MCM_ShowUINotifications", false)
+                and EA_GetSettingBoolEvent("MCM_ShowReputationWarnings", false)
+                and EA_DebugEnabled()
             if player and player ~= "" and repUiEnabled then
                 if crossedWary then
                     local text = EA_FormatRepWarning(

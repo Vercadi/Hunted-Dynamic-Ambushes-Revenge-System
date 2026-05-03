@@ -18,7 +18,7 @@
         <node id="ModuleInfo">
           <attribute id="Author" type="LSString" value="Vercadi" />
           <attribute id="CharacterCreationLevelName" type="FixedString" value="" />
-          <attribute id="Description" type="LSString" value="Enemies remember your crimes! Face dynamic ambushes during rests based on reputation with 14 creature types." />
+          <attribute id="Description" type="LSString" value="Hostile forces remember your actions. Face dynamic ambushes, creature-type reputation, exploration and rest pressure, and champion retaliation." />
           <attribute id="Folder" type="LSString" value="Hunted_DynamicAmbushes_Revenge_System" />
           <attribute id="GMTemplate" type="FixedString" value="" />
           <attribute id="LobbyLevelName" type="FixedString" value="" />

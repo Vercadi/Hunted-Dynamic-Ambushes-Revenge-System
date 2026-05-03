@@ -26,14 +26,68 @@
                                                                                                "CUSTOM"
                                                                                            ]
                                                                            },
-                                                               "Description":  "Fast preset for overall tuning. Advanced Mode exposes the full control set, and manual edits to preset-owned advanced settings switch this to CUSTOM."
+                                                               "Description":  "Fast preset for overall tuning. Advanced Mode exposes the full control set, and manual edits to preset-owned advanced settings switch this to CUSTOM.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h86389bdeg6d90gde56g737bge35d657927a7",
+                                                                               "DescriptionHandle":  "hf980509bg74edg77a1gfb16g0814dc61bffa",
+                                                                               "ChoicesHandles":  [
+                                                                                                      "h77513a20gcc91g366fg80d8gc3bea2a4fdc7",
+                                                                                                      "h2a1250a0gbc35gda69ge78dge1e9d489d6bd",
+                                                                                                      "ha8ccd60dg0b03g109dgc5dagee775b7fb946",
+                                                                                                      "h8aacd8f3g96dcg122fg84a3g8ea7cdc38b48",
+                                                                                                      "h26010bf3g005dg3d94gf35fg156aeace2ac9"
+                                                                                                  ]
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_AdvancedMode",
                                                                "Name":  "Advanced Mode",
                                                                "Type":  "checkbox",
                                                                "Default":  false,
-                                                               "Description":  "Shows the full tuning controls. Presets remain the simple entry point; manual edits to preset-owned advanced settings switch Preset to CUSTOM."
+                                                               "Description":  "Shows the full tuning controls. Presets remain the simple entry point; manual edits to preset-owned advanced settings switch Preset to CUSTOM.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h49615d11gf38eg4289g1055gd6250841daf2",
+                                                                               "DescriptionHandle":  "h4d9013d5g0c25g6477gf3b6gda7589ff0fac"
+                                                                           }
+                                                           },
+                                                           {
+                                                               "Id":  "MCM_CustomBasePreset",
+                                                               "Name":  "Custom Base Preset",
+                                                               "Type":  "radio",
+                                                               "Default":  "Marked",
+                                                               "Options":  {
+                                                                               "Choices":  [
+                                                                                               "Wayfarer",
+                                                                                               "Marked",
+                                                                                               "Relentless",
+                                                                                               "Hunted"
+                                                                                           ]
+                                                                           },
+                                                               "Description":  "Base preset used for CUSTOM tuning after advanced preset-owned settings are edited.",
+                                                               "VisibleIf":  {
+                                                                                 "Conditions":  [
+                                                                                                    {
+                                                                                                        "SettingId":  "MCM_AdvancedMode",
+                                                                                                        "Operator":  "==",
+                                                                                                        "ExpectedValue":  true
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "SettingId":  "MCM_DifficultyPreset",
+                                                                                                        "Operator":  "==",
+                                                                                                        "ExpectedValue":  "CUSTOM"
+                                                                                                    }
+                                                                                                ]
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h16d2e4a1g9425g4f58ga9c4g9c720b47b042",
+                                                                               "DescriptionHandle":  "h8a7fd312gce9eg4e5dga7c9gc34dd3d9e805",
+                                                                               "ChoicesHandles":  [
+                                                                                                      "h77513a20gcc91g366fg80d8gc3bea2a4fdc7",
+                                                                                                      "h2a1250a0gbc35gda69ge78dge1e9d489d6bd",
+                                                                                                      "ha8ccd60dg0b03g109dgc5dagee775b7fb946",
+                                                                                                      "h8aacd8f3g96dcg122fg84a3g8ea7cdc38b48"
+                                                                                                  ]
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_CombatExtenderMode",
@@ -49,32 +103,21 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_SkipBeachTutorialAmbush",
-                                                               "Name":  "Skip Beach Tutorial Ambush",
-                                                               "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "Skips the one-time beach wake-up tutorial ambush and marks the tutorial flow completed.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_DebugMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h98baa876ga522g5cbdge8aag77ef2b03eb8b",
+                                                                               "DescriptionHandle":  "hff17d7a3gf766g8643g9d8cg160e5791d5dc"
+                                                                           }
                                                            }
-                                                       ]
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "hda1066c8g2f17g993fg3044g6e74ce8d18f9"
+                                                      }
                                       }
-                                  ]
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "hcdf95029gacbegf1f4g3bbag0e3994f98fe1"
+                                 }
                  },
                  {
                      "TabId":  "tab_balance_core",
@@ -103,7 +146,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h229e8bffg602cgda68gd1a4gc4cb8748e44b",
+                                                                               "DescriptionHandle":  "hf76a7c41g8012g3c95g9154g25540dbc5625"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_ScaleWithPartySize",
@@ -119,7 +166,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "he94e3110g2b56g800fg75a9gdea269e557fd",
+                                                                               "DescriptionHandle":  "h0d2cc167gf69fg7093gab91gc9ff24031a69"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_StrictProgressionGates",
@@ -135,7 +186,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "hf1952bb8gab11gf1deg6a84g4e769f9bf22c",
+                                                                               "DescriptionHandle":  "hdd6f073fg0a8dg0678g76bag6743cb7fc60f"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_UseCompositionGuards",
@@ -151,7 +206,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h5477266dgb056gc06ag9449g8ee952ce95c0",
+                                                                               "DescriptionHandle":  "h15910937gfdc1g826dg20a5gbfdd2d66a53a"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_BalanceProfile",
@@ -173,40 +232,26 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h23fcca3bg7193g8073g8543gbe70336e8d27",
+                                                                               "DescriptionHandle":  "hf8aa0560g7ca1g1ce8g0336gd8787489a83e",
+                                                                               "ChoicesHandles":  [
+                                                                                                      "hab52068eg3720gd018g66ecg83fdb8b6af69",
+                                                                                                      "h127c5185gdb2cg9a2bg74d8g8b2a7bbb9330"
+                                                                                                  ]
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_EnableReputation",
                                                                "Name":  "Enable Reputation System",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Tracks creature-type reputation and can escalate to champions over time."
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShowReputationWarnings",
-                                                               "Name":  "Show Threshold Warnings",
-                                                               "Type":  "checkbox",
-                                                               "Default":  true,
-                                                               "Description":  "Shows message-box warnings when reputation thresholds are crossed (more intrusive).",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                     {
-                                                                                                         "SettingId":  "MCM_AdvancedMode",
-                                                                                                         "Operator":  "==",
-                                                                                                         "ExpectedValue":  true
-                                                                                                     },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_ShowUINotifications",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_EnableReputation",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                               "Description":  "Tracks creature-type reputation and can escalate to champions over time.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "hc7ca8e7cgd28cg75e3g9a7cg67d978a37848",
+                                                                               "DescriptionHandle":  "haa2a0cd8geb88g2225g2440g46baa2c64dc5"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_ReputationDecayRate",
@@ -222,20 +267,30 @@
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
-                                                                                                        "SettingId":  "MCM_EnableReputation",
+                                                                                                        "SettingId":  "MCM_AdvancedMode",
                                                                                                         "Operator":  "==",
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "hfbf81eb6gfd64ga5b0gd1d4gaf030d607f69",
+                                                                               "DescriptionHandle":  "h6c97c64ag092age1cfg1e35g4d0e23a149dc"
+                                                                           }
                                                            }
-                                                       ]
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "h8dd25609g9605g3864g7fa2g49021c547486"
+                                                      }
                                       }
-                                  ]
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "h30d83dabgd8b6g0174g49cag1a2bce7029bc"
+                                 }
                  },
                  {
-                    "TabId":  "tab_rest_frequency",
-                    "TabName":  "Vulnerability \u0026 Frequency",
+                     "TabId":  "tab_rest_frequency",
+                     "TabName":  "Vulnerability \u0026 Frequency",
                      "Sections":  [
                                       {
                                           "SectionId":  "section_rest_frequency",
@@ -246,14 +301,22 @@
                                                                "Name":  "Allow Ambush Checks In Vulnerable Moments",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Allows hunters to strike during brief and extended respites."
+                                                               "Description":  "Allows hunters to strike during brief and extended respites.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h3ec318fcg3957g6286gbf3bge82eaa32872d",
+                                                                               "DescriptionHandle":  "h93f155b7gdd17gacbagb6f4g7348be8b7de6"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_EnableTimeInDangerPressure",
                                                                "Name":  "Enable Time-In-Danger Pressure",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Lets exposure in dangerous areas build extra ambush pressure over time, including passive travel danger checks. Turning this OFF clears stored time-in-danger buildup."
+                                                               "Description":  "Lets exposure in dangerous areas build extra ambush pressure over time, including passive travel danger checks. Turning this OFF clears stored time-in-danger buildup.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h559e06a8g211fg0fc8g43bag2b518dae2dcb",
+                                                                               "DescriptionHandle":  "h907097c8g3c8dgb276gbaddgb37cc0fc946e"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_SafetyChecks",
@@ -267,14 +330,13 @@
                                                                                                         "SettingId":  "MCM_AdvancedMode",
                                                                                                         "Operator":  "==",
                                                                                                         "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_DebugMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h22f95d0ag5772ga7acg5d95g39fd1ab8bcbe",
+                                                                               "DescriptionHandle":  "h5c77668fg2e7eg229dg7e29gf0cedb07f081"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_CampAmbushes",
@@ -290,7 +352,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h96f77c25g708ag6451gfc52g56ed84e07929",
+                                                                               "DescriptionHandle":  "he9155adcg1838gac32gbc6dg2c945c10c485"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_EnableAmbushCooldown",
@@ -306,7 +372,11 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "he4fb39a6g0322gf1cdga368gbbce024e2a9d",
+                                                                               "DescriptionHandle":  "h103d5076ga39ag6f87g5cc8ge50b2abe75c5"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_AmbushCooldownMinutes",
@@ -332,158 +402,21 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_AmbushChanceShortPct",
-                                                               "Name":  "Brief Respite Chance (%)",
-                                                               "Type":  "slider_int",
-                                                               "Default":  5,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  100,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Chance for hunters to strike during a brief respite. Advanced Mode only; Preset values are authoritative when Advanced Mode is OFF.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_AmbushChanceLongPct",
-                                                               "Name":  "Extended Respite Chance (%)",
-                                                               "Type":  "slider_int",
-                                                               "Default":  15,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  100,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Chance for hunters to strike during an extended respite. Advanced Mode only; Preset values are authoritative when Advanced Mode is OFF.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShortRestDelayMinMinutes",
-                                                               "Name":  "Brief Respite Delay Min",
-                                                               "Type":  "slider_int",
-                                                               "Default":  0,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  60,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Minimum delay before hunters can strike after a brief respite. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShortRestDelayMaxMinutes",
-                                                               "Name":  "Brief Respite Delay Max",
-                                                               "Type":  "slider_int",
-                                                               "Default":  10,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  60,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Maximum delay before hunters can strike after a brief respite. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_LongRestDelayMinMinutes",
-                                                               "Name":  "Extended Respite Delay Min",
-                                                               "Type":  "slider_int",
-                                                               "Default":  2,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  60,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Minimum delay before hunters can strike after an extended respite. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_LongRestDelayMaxMinutes",
-                                                               "Name":  "Extended Respite Delay Max",
-                                                               "Type":  "slider_int",
-                                                               "Default":  20,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  60,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Maximum delay before hunters can strike after an extended respite. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_QuickTestMode",
-                                                               "Name":  "Quick Test Vulnerability Flow",
-                                                               "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "Tester helper (runtime override): forces 100% ambush chance, immediate vulnerability checks (0 minute delay), and disables cooldown without rewriting saved sliders.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_DebugMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h6b905cafgc8e7g6663g2fb8g745fdf9771a1",
+                                                                               "DescriptionHandle":  "h54960a1fg3da7g6a17gb821gefd95e89ced5"
+                                                                           }
                                                            }
-                                                       ]
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "h1ce4dff1gafc7g40beg726fgd3c391bb6d7a"
+                                                      }
                                       }
-                                  ]
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "h76cb45e5g14dfg14cdg1b38g8af5ca6a0e91"
+                                 }
                  },
                  {
                      "TabId":  "tab_spawn_behavior",
@@ -498,70 +431,42 @@
                                                                "Name":  "Enable Ambush System",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Master toggle for the ambush and retaliation system."
+                                                               "Description":  "Master toggle for the ambush and retaliation system.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "hebaa0565g7a17g64e8ge815g6eef865bca0a",
+                                                                               "DescriptionHandle":  "h9cf00f5cg89eagdd73gdff6g3936576ff4cb"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_EnableVanillaSummons",
                                                                "Name":  "Use Vanilla Enemy Pool",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Use the built-in vanilla enemy list. Turn OFF only if an external provider or compatibility patch is installed; otherwise ambushes may have no valid enemy pool."
+                                                               "Description":  "Use the built-in vanilla enemy list. Turn OFF only if an external provider or compatibility patch is installed; otherwise ambushes may have no valid enemy pool.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h7e1b9dffgf99fg2cf7g5afegefc09f00ac47",
+                                                                               "DescriptionHandle":  "he7d126f8g83c3gd917g4359g5754158e5ab8"
+                                                                           },
+                                                               "VisibleIf":  {
+                                                                                 "Conditions":  [
+                                                                                                    {
+                                                                                                        "SettingId":  "MCM_AdvancedMode",
+                                                                                                        "Operator":  "==",
+                                                                                                        "ExpectedValue":  true
+                                                                                                    }
+                                                                                                ]
+                                                                             }
                                                            },
                                                            {
                                                                "Id":  "MCM_ApplyPartySurprised",
                                                                "Name":  "Apply Surprise on Ambush",
                                                                "Type":  "checkbox",
                                                                "Default":  false,
-                                                               "Description":  "Runs the ambush surprise check for eligible party members when combat starts. Party members that pass the Perception check or have immunity effects are not surprised."
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShowUINotifications",
-                                                               "Name":  "Enable Alert Popups",
-                                                               "Type":  "checkbox",
-                                                               "Default":  true,
-                                                               "Description":  "Master toggle for ambush, reputation, and champion popup notifications. Immersion cues still play when OFF."
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShowAmbushWarningNotifications",
-                                                               "Name":  "Show Pre-Ambush Warnings",
-                                                               "Type":  "checkbox",
-                                                               "Default":  true,
-                                                               "Description":  "Shows warning text popups before ambushes. Requires ambush UI notifications master toggle.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                     {
-                                                                                                         "SettingId":  "MCM_AdvancedMode",
-                                                                                                         "Operator":  "==",
-                                                                                                         "ExpectedValue":  true
-                                                                                                     },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_ShowUINotifications",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ShowChampionArrivalPopup",
-                                                               "Name":  "Show Champion Arrival Alerts",
-                                                               "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "Shows a popup when a champion spawns. Requires ambush UI notifications master toggle.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                     {
-                                                                                                         "SettingId":  "MCM_AdvancedMode",
-                                                                                                         "Operator":  "==",
-                                                                                                         "ExpectedValue":  true
-                                                                                                     },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_ShowUINotifications",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                               "Description":  "Runs the ambush surprise check for eligible party members when combat starts. Party members that pass the Perception check or have immunity effects are not surprised.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h73daffe6gada5gfd22g4d0fg785685bec327",
+                                                                               "DescriptionHandle":  "h2f663676ge62dg7464gf86ege32952964b4c"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_ArrivalCuePolicy",
@@ -575,7 +480,7 @@
                                                                                                "Off"
                                                                                            ]
                                                                            },
-                                                               "Description":  "Controls ambient arrival cues for spawned ambushers. Balanced uses the tier chance table and the scale slider. Always On forces cue attempts for visibility. Off disables extra arrival cues and keeps only the baseline spawn VFX fallback.",
+                                                               "Description":  "Controls ambient arrival cues for spawned ambushers. Balanced uses the tier chance table. Always On forces cue attempts for visibility. Off disables extra arrival cues and keeps only the baseline spawn VFX fallback.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
@@ -584,28 +489,16 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_ArrivalCueChanceScale",
-                                                               "Name":  "Arrival Cue Chance Scale (%)",
-                                                               "Type":  "slider_int",
-                                                               "Default":  100,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  200,
-                                                                               "Step":  5
-                                                                           },
-                                                               "Description":  "Scales Balanced arrival-cue chance from 0% to 200%. Ignored when Arrival Cue Policy is Always On or Off.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h0580b266g8008g5bcag8f3bg249d9b5ae3bd",
+                                                                               "DescriptionHandle":  "hcc2cdd26g1443g9224g93e0g32bbe7696806",
+                                                                               "ChoicesHandles":  [
+                                                                                                      "he4fa59cbg127dgc3ecga82ag944808433e07",
+                                                                                                      "h9bc8c091gfd47gb3d7g1338g5875b5dfe86b",
+                                                                                                      "h15b78684g508dg5cd7g191fgd66a56f55d6e"
+                                                                                                  ]
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_SpawnPlacementMode",
@@ -619,28 +512,32 @@
                                                                                                "Create OOS Only"
                                                                                            ]
                                                                            },
-                                                               "Description":  "Controls how ambushers pick spawn locations. Auto keeps the current hybrid behavior. Find Valid Only skips CreateOutOfSight. Create OOS Only skips normal FindValid loops and only uses the hard fallback if the API itself fails.",
+                                                               "Description":  "Controls how ambushers pick spawn locations. Auto uses out-of-sight placement for the anchor and spread placement for support spawns when possible. Find Valid Only skips CreateOutOfSight. Create OOS Only only uses CreateOutOfSight.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
                                                                                                         "SettingId":  "MCM_AdvancedMode",
                                                                                                         "Operator":  "==",
                                                                                                         "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_DebugMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h7b824684gc0f6g9c5bgf010g10c8dee32c15",
+                                                                               "DescriptionHandle":  "hd1169dfeg4082gc4f9g52d4ga3a88fe5228d",
+                                                                               "ChoicesHandles":  [
+                                                                                                      "ha3350ba0g386ege905g2c2ag619b0ff0dadc",
+                                                                                                      "hcce34891g7fa3gebefgeea6ga42eb2355476",
+                                                                                                      "h73d3801dg981eg769dgd6bdgccf51398fdb0"
+                                                                                                  ]
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_EnableAmbusherEscape",
                                                                "Name":  "Enable Escapes",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "Allows non-champion ambushers to attempt fleeing after prolonged combat. Advanced Mode only; Preset controls this when Advanced Mode is OFF.",
+                                                               "Description":  "Allows non-champion ambushers to attempt fleeing after prolonged combat. Detailed escape chance/timing is preset-owned in normal play.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
@@ -649,115 +546,50 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_EscapeStartTurn",
-                                                               "Name":  "Escape Start Turn",
-                                                               "Type":  "slider_int",
-                                                               "Default":  5,
-                                                               "Options":  {
-                                                                               "Min":  1,
-                                                                               "Max":  30,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Turn number at which escape checks begin. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_EnableAmbusherEscape",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_EscapeDC",
-                                                               "Name":  "Escape DC",
-                                                               "Type":  "slider_int",
-                                                               "Default":  14,
-                                                               "Options":  {
-                                                                               "Min":  5,
-                                                                               "Max":  25,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Escape check target: d20 + bonuses vs this DC. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_EnableAmbusherEscape",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_EscapeHPThreshold",
-                                                               "Name":  "Escape HP Threshold (%)",
-                                                               "Type":  "slider_int",
-                                                               "Default":  50,
-                                                               "Options":  {
-                                                                               "Min":  1,
-                                                                               "Max":  100,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Ambushers only attempt escape at or below this HP percentage. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_EnableAmbusherEscape",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_EscapeMaxPerCombat",
-                                                               "Name":  "Max Escapes Per Combat",
-                                                               "Type":  "slider_int",
-                                                               "Default":  2,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  6,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Maximum successful ambusher escapes allowed per combat. Advanced Mode only.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_EnableAmbusherEscape",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h4a0a5514g042age9a2g034cga83aeb746d69",
+                                                                               "DescriptionHandle":  "h6067ea5egd2c5g0863gaafbgcb8a4b3d1b06"
+                                                                           }
                                                            }
-                                                       ]
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "hda7c6ee9gbe6dg54c6g21abg17224ba086fc"
+                                                      }
                                       }
-                                  ]
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "h6aa12a5fg5db6gec73g5e84g94e77f83fe5d"
+                                 }
+                 },
+                 {
+                     "TabId":  "tab_diagnostics",
+                     "TabName":  "Diagnostics",
+                     "Sections":  [
+                                      {
+                                          "SectionId":  "section_diagnostics",
+                                          "SectionName":  "Diagnostics",
+                                          "Settings":  [
+                                                           {
+                                                               "Id":  "MCM_EnableDebugLogging",
+                                                               "Name":  "Debug Logging",
+                                                               "Type":  "checkbox",
+                                                               "Default":  false,
+                                                               "Description":  "Adds verbose Hunted diagnostics to Script Extender logs. Enable when testing or reporting bugs.",
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h03c1120fgd771g2776g3ffbg3bf3e81fa893",
+                                                                               "DescriptionHandle":  "h950f3903g9cc8g4e4cgbcb0g455ca979139b"
+                                                                           }
+                                                           }
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "hfb7f12fbg828fg7899g399fg11e6056ef046"
+                                                      }
+                                      }
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "ha3c05db8gb55bgcba3g8f43gde0cc72bea9b"
+                                 }
                  },
                  {
                      "TabId":  "tab_rewards",
@@ -786,14 +618,18 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h59fdb657g9a67gd7e8g26a4gcb7696b5bd00",
+                                                                               "DescriptionHandle":  "hf88d70d3gdf7bgb535g0205gfe5553f3d155"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_DisableAmbushLoot",
                                                                "Name":  "Disable Generated Ambush Loot",
                                                                "Type":  "checkbox",
-                                                               "Default":  true,
-                                                               "Description":  "If enabled, ambush corpses stay interactable but generated ambush loot is cleared while normal corpse interaction and equipped gear remain (prevents economy inflation). Preset baseline: Wayfarer OFF, Marked/Relentless/Hunted ON.",
+                                                               "Default":  false,
+                                                               "Description":  "If enabled, ambush corpses stay interactable but generated ambush loot is cleared while normal corpse interaction and equipped gear remain. Preset baseline: Wayfarer/Marked/Relentless OFF, Hunted ON.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
@@ -802,14 +638,18 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "h3a575e27gb386g5efag675fg8b98432419e1",
+                                                                               "DescriptionHandle":  "h2481abc4g831eg7e42g3b09gcd10adad0485"
+                                                                           }
                                                            },
                                                            {
                                                                "Id":  "MCM_AllowChampionLoot",
                                                                "Name":  "Allow Champion Loot",
                                                                "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "If enabled, champions can keep loot even when ambush loot is disabled (advanced). Preset baseline: Wayfarer ON, Marked/Relentless/Hunted OFF.",
+                                                               "Default":  true,
+                                                               "Description":  "If enabled, champions can keep loot even when generated ambush loot is disabled. Preset baseline: Wayfarer/Marked/Relentless ON, Hunted OFF.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
@@ -823,81 +663,24 @@
                                                                                                         "ExpectedValue":  true
                                                                                                     }
                                                                                                 ]
-                                                                             }
+                                                                             },
+                                                               "Handles":  {
+                                                                               "NameHandle":  "he640a700g6679g7d25gebdegead956479b49",
+                                                                               "DescriptionHandle":  "hd4e5ee9cg328fg93d6gf255gf29544d09a52"
+                                                                           }
                                                            }
-                                                       ]
+                                                       ],
+                                          "Handles":  {
+                                                          "NameHandle":  "h62b4ce86g2796gb811g5323gc501af30961d"
+                                                      }
                                       }
-                                  ]
-                 },
-                 {
-                     "TabId":  "tab_debug",
-                     "TabName":  "Debug",
-                     "Sections":  [
-                                      {
-                                          "SectionId":  "section_debug",
-                                          "SectionName":  "Debug",
-                                          "Settings":  [
-                                                           {
-                                                               "Id":  "MCM_DebugMode",
-                                                               "Name":  "Verbose Debug Mode",
-                                                               "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "Enables verbose debug prints.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_RobustMode",
-                                                               "Name":  "Robust Safety Mode",
-                                                               "Type":  "checkbox",
-                                                               "Default":  false,
-                                                               "Description":  "Adds extra safety guards/logging to reduce edge-case errors (recommended OFF unless troubleshooting).",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           },
-                                                           {
-                                                               "Id":  "MCM_PointBudget",
-                                                               "Name":  "Point Budget Override (Debug)",
-                                                               "Type":  "slider_int",
-                                                               "Default":  0,
-                                                               "Options":  {
-                                                                               "Min":  0,
-                                                                               "Max":  30,
-                                                                               "Step":  1
-                                                                           },
-                                                               "Description":  "Expert/debug override. 0 = Auto scaling. \u003e0 forces a fixed encounter budget and can easily unbalance progression.",
-                                                               "VisibleIf":  {
-                                                                                 "Conditions":  [
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_AdvancedMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "SettingId":  "MCM_DebugMode",
-                                                                                                        "Operator":  "==",
-                                                                                                        "ExpectedValue":  true
-                                                                                                    }
-                                                                                                ]
-                                                                             }
-                                                           }
-                                                       ]
-                                      }
-                                  ]
+                                  ],
+                     "Handles":  {
+                                     "NameHandle":  "hc50ee5a5g255cg5001g205fg369d1920b33c"
+                                 }
                  }
-             ]
+             ],
+    "Handles":  {
+                    "NameHandle":  "h3ef168e2gcf35ge7aage3dag6f38eb862d2b"
+                }
 }

@@ -13,6 +13,9 @@ function M.Build(deps)
     local EA_GetPoolActiveSummonList = deps.EA_GetPoolActiveSummonList or function() return {} end
     local GetSafeLevel = deps.GetSafeLevel or function() return 1 end
     local EA_GetSettingBool = deps.EA_GetSettingBool or function(_, fallback) return fallback == true end
+    local EA_ReadSettingRaw = deps.EA_ReadSettingRaw or function(_, fallback) return fallback end
+    local GetPartySize = deps.GetPartySize or function() return 4 end
+    local SpawnHostileNearPlayer = deps.SpawnHostileNearPlayer or function() return nil end
     local EA_IsDebugMode = deps.EA_IsDebugMode or function() return false end
     local DebugPrint = deps.DebugPrint or function() end
     local SafeGetPosition = deps.SafeGetPosition or function() return nil, nil, nil end
@@ -403,6 +406,31 @@ function M.Build(deps)
         end)
     end
 
+    local function EA_NormalizeChampionHPToCurrentMax(entity, reason)
+        if not entity or entity == "" then
+            return false
+        end
+        if Osi.ObjectExists and Osi.ObjectExists(entity) ~= 1 then
+            return false
+        end
+        if Osi.IsInCombat and Osi.IsInCombat(entity) == 1 then
+            DebugPrint("Champion HP normalize skipped:", tostring(reason or "unknown"), "reason=in_combat")
+            return false
+        end
+        if not (Osi.GetMaxHitpoints and Osi.SetHitpoints) then
+            return false
+        end
+
+        local maxhp = tonumber(SafeOsiCall(Osi.GetMaxHitpoints, entity)) or 0
+        if maxhp <= 1 then
+            return false
+        end
+
+        SafeOsiExec(Osi.SetHitpoints, entity, maxhp)
+        DebugPrint("Champion HP normalized to max:", tostring(maxhp), "reason=", tostring(reason or "unknown"))
+        return true
+    end
+
     local function EA_CopyChampionCandidate(entry, providerId)
         local out = {}
         if type(entry) ~= "table" then
@@ -460,6 +488,470 @@ function M.Build(deps)
         end
 
         return true, nil, minPartyLevel, maxPartyLevel
+    end
+
+    local function EA_IsChampionProviderRejectedByLevelGate(reason)
+        return reason == "below_min_party_level"
+            or reason == "above_max_party_level"
+            or reason == "provider_below_min_party_level"
+            or reason == "provider_above_max_party_level"
+            or reason == "provider_level_gated"
+    end
+
+    local function EA_DebugChampionRetinue(...)
+        if EA_IsDebugMode() then
+            DebugPrint(...)
+        end
+    end
+
+    local function EA_DeleteRejectedChampionCandidate(guid, reason)
+        if not guid or guid == "" then
+            return
+        end
+
+        local function requestDelete(pass)
+            if Osi and Osi.ObjectExists and Osi.ObjectExists(guid) ~= 1 then
+                return
+            end
+            if Osi and Osi.SetOnStage then
+                SafeOsiExec(Osi.SetOnStage, guid, 0)
+            end
+            if Osi and Osi.SetCanFight then
+                SafeOsiExec(Osi.SetCanFight, guid, 0)
+            end
+            if Osi and Osi.SetCanJoinCombat then
+                SafeOsiExec(Osi.SetCanJoinCombat, guid, 0)
+            end
+            if Osi and Osi.RequestDelete then
+                SafeOsiExec(Osi.RequestDelete, guid)
+            end
+            if EA_IsDebugMode() then
+                DebugPrint(string.format(
+                    "[Champion] Rejected candidate delete requested pass=%s id=%s reason=%s",
+                    tostring(pass),
+                    tostring(guid),
+                    tostring(reason or "rejected")
+                ))
+            end
+        end
+
+        requestDelete("immediate")
+        if Ext and Ext.Timer and Ext.Timer.WaitFor then
+            Ext.Timer.WaitFor(120, function() requestDelete("120ms") end)
+            Ext.Timer.WaitFor(600, function() requestDelete("600ms") end)
+            Ext.Timer.WaitFor(1600, function() requestDelete("1600ms") end)
+        end
+    end
+
+    local function EA_NormalizeRetinueText(value)
+        local text = tostring(value or ""):lower()
+        text = text:gsub("[^%w]+", " ")
+        text = text:gsub("^%s+", "")
+        text = text:gsub("%s+$", "")
+        text = text:gsub("%s+", " ")
+        return text
+    end
+
+    local function EA_GetRetinuePreset()
+        local preset = EA_ReadSettingRaw("MCM_DifficultyPreset", "Marked")
+        if EA_NormalizeRetinueText(preset) == "custom" then
+            preset = EA_ReadSettingRaw("MCM_CustomBasePreset", "Marked")
+        end
+
+        local token = EA_NormalizeRetinueText(preset)
+        if token == "wayfarer" or token == "easy" then return "Wayfarer" end
+        if token == "relentless" or token == "hard" then return "Relentless" end
+        if token == "hunted" or token == "nightmare" then return "Hunted" end
+        return "Marked"
+    end
+
+    local function EA_GetChampionRetinuePlan(player, champion, creatureType, championLevel)
+        local partyLevel = EA_GetChampionPartyLevel(player)
+        local partySize = math.max(1, math.floor(tonumber(GetPartySize(player)) or 4))
+        local preset = EA_GetRetinuePreset()
+        local count = 0
+        local eliteLimit = 0
+
+        if preset == "Wayfarer" then
+            if partySize >= 6 and partyLevel >= 8 then
+                count = 1
+            end
+        elseif preset == "Marked" then
+            if partyLevel >= 8 then
+                if partySize >= 6 then
+                    count = 2
+                elseif partySize >= 4 then
+                    count = 1
+                end
+            end
+        elseif preset == "Relentless" then
+            if partySize >= 6 and partyLevel >= 10 then
+                count = 3
+                eliteLimit = 1
+            elseif partySize >= 5 and partyLevel >= 8 then
+                count = 2
+            elseif partySize >= 4 and partyLevel >= 8 then
+                count = 1
+            end
+        elseif preset == "Hunted" then
+            if partySize >= 7 and partyLevel >= 12 then
+                count = 4
+                eliteLimit = 1
+            elseif partySize >= 6 and partyLevel >= 8 then
+                count = 3
+                if partyLevel >= 12 then
+                    eliteLimit = 1
+                end
+            elseif partySize >= 5 and partyLevel >= 8 then
+                count = 2
+            elseif partySize >= 4 and partyLevel >= 8 then
+                count = 1
+            end
+        end
+
+        return {
+            count = count,
+            eliteLimit = eliteLimit,
+            allowDread = eliteLimit > 0,
+            preset = preset,
+            partyLevel = partyLevel,
+            partySize = partySize,
+            championLevel = tonumber(championLevel) or tonumber(champion and champion.level) or partyLevel,
+            creatureType = tostring(creatureType or champion and champion.creatureType or ""),
+            family = EA_NormalizeRetinueText(champion and champion.retinueFamily or ""),
+        }
+    end
+
+    local function EA_GetRetinueTierForSlot(plan, slot)
+        local preset = tostring(plan and plan.preset or "Marked")
+        local count = tonumber(plan and plan.count) or 0
+        local eliteLimit = tonumber(plan and plan.eliteLimit) or 0
+        local index = math.max(1, math.floor(tonumber(slot) or 1))
+
+        if preset == "Wayfarer" then
+            return "COMMON"
+        end
+        if eliteLimit > 0 and index == 1 then
+            return "ELITE"
+        end
+        if count >= 2 and index == count then
+            return "COMMON"
+        end
+        return "VETERAN"
+    end
+
+    local function EA_RetinueEntryMatchesFamily(entry, family)
+        if not family or family == "" or type(entry) ~= "table" then
+            return false
+        end
+
+        local name = EA_NormalizeRetinueText(entry.name or entry.id or entry.template)
+        for token in family:gmatch("%S+") do
+            if not name:find(token, 1, true) then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function EA_IsRetinueEntryEligible(entry, plan, allowDread, desiredTier)
+        if type(entry) ~= "table" then
+            return false, "not_table"
+        end
+        if entry.championOnly == true then
+            return false, "champion_only"
+        end
+        if not entry.template or entry.template == "" then
+            return false, "missing_template"
+        end
+        if EA_IsBadChampionTemplate(entry.template) then
+            return false, "blacklisted_template"
+        end
+
+        local partyLevel = tonumber(plan and plan.partyLevel) or 1
+        local minPartyLevel = EA_NormalizeChampionLevelGate(entry.minPartyLevel)
+        local maxPartyLevel = EA_NormalizeChampionLevelGate(entry.maxPartyLevel)
+        if minPartyLevel and partyLevel < minPartyLevel then
+            return false, "below_min_party_level"
+        end
+        if maxPartyLevel and partyLevel > maxPartyLevel then
+            return false, "above_max_party_level"
+        end
+
+        local powerClass = tostring(entry.powerClass or "STANDARD"):upper()
+        local tierToken = tostring(desiredTier or ""):upper()
+        if tierToken == "COMMON" then
+            if powerClass ~= "FODDER" and powerClass ~= "STANDARD" then
+                return false, "common_power_rejected"
+            end
+        end
+        if powerClass == "APEX" then
+            return false, "apex_rejected"
+        end
+        if powerClass == "DREAD" and allowDread ~= true then
+            return false, "dread_rejected"
+        end
+
+        return true, nil
+    end
+
+    local function EA_ScoreRetinueEntry(entry, plan, source, desiredTier)
+        local score = (source == "family") and 1000 or 500
+        local powerClass = tostring(entry.powerClass or "STANDARD"):upper()
+        if powerClass == "FODDER" then
+            score = score + 45
+        elseif powerClass == "STANDARD" then
+            score = score + 40
+        elseif powerClass == "BRUISER" then
+            score = score + 32
+        elseif powerClass == "DREAD" then
+            score = score + 16
+        end
+
+        local spawnBand = tostring(entry.spawnBand or ""):upper()
+        if spawnBand ~= "" and spawnBand == tostring(desiredTier or ""):upper() then
+            score = score + 18
+        end
+
+        local entryLevel = tonumber(entry.resolvedTemplateLevel or entry.level) or tonumber(plan and plan.partyLevel) or 1
+        score = score - math.abs(entryLevel - (tonumber(plan and plan.partyLevel) or entryLevel))
+        return score
+    end
+
+    local function EA_SelectOneRetinueCandidate(candidates)
+        if type(candidates) ~= "table" or #candidates == 0 then
+            return nil
+        end
+
+        table.sort(candidates, function(a, b)
+            if a.score == b.score then
+                return tostring(a.entry and a.entry.name or "") < tostring(b.entry and b.entry.name or "")
+            end
+            return (tonumber(a.score) or 0) > (tonumber(b.score) or 0)
+        end)
+
+        local topScore = tonumber(candidates[1].score) or 0
+        local weighted = {}
+        local totalWeight = 0
+        for _, candidate in ipairs(candidates) do
+            local score = tonumber(candidate.score) or 0
+            if score >= (topScore - 30) then
+                local weight = math.max(tonumber(candidate.entry and candidate.entry.weight) or 1, 0.01)
+                weighted[#weighted + 1] = {
+                    candidate = candidate,
+                    weight = weight,
+                }
+                totalWeight = totalWeight + weight
+            end
+        end
+
+        if totalWeight <= 0 then
+            return candidates[1]
+        end
+
+        local roll = EA_RandFloatCompat() * totalWeight
+        local acc = 0
+        for _, item in ipairs(weighted) do
+            acc = acc + item.weight
+            if roll <= acc then
+                return item.candidate
+            end
+        end
+
+        return weighted[1] and weighted[1].candidate or candidates[1]
+    end
+
+    local function EA_BuildRetinueCandidates(activeList, plan, desiredTier, usedTemplates, source, allowDread)
+        local out = {}
+        local desiredCreatureType = tostring(plan and plan.creatureType or "")
+        local family = tostring(plan and plan.family or "")
+        for _, entry in ipairs(activeList or {}) do
+            local template = tostring(entry and entry.template or "")
+            if template ~= "" and not usedTemplates[string.lower(template)] then
+                local sourceMatch = false
+                if source == "family" then
+                    sourceMatch = EA_RetinueEntryMatchesFamily(entry, family)
+                elseif source == "creatureType" then
+                    sourceMatch = tostring(entry and entry.creatureType or "") == desiredCreatureType
+                end
+
+                if sourceMatch then
+                    local eligible = EA_IsRetinueEntryEligible(entry, plan, allowDread, desiredTier)
+                    if eligible then
+                        out[#out + 1] = {
+                            entry = entry,
+                            source = source,
+                            score = EA_ScoreRetinueEntry(entry, plan, source, desiredTier),
+                        }
+                    end
+                end
+            end
+        end
+        return out
+    end
+
+    local function EA_SelectChampionRetinueEntries(player, champion, creatureType, championLevel)
+        local plan = EA_GetChampionRetinuePlan(player, champion, creatureType, championLevel)
+        if plan.count <= 0 then
+            EA_DebugChampionRetinue(string.format(
+                "[ChampionRetinue] count=0 preset=%s party=%d level=%d family=%s type=%s",
+                tostring(plan.preset),
+                tonumber(plan.partySize) or 0,
+                tonumber(plan.partyLevel) or 0,
+                tostring(plan.family ~= "" and plan.family or "-"),
+                tostring(plan.creatureType)
+            ))
+            return {}, plan, "count_zero"
+        end
+
+        local activeList = EA_GetPoolActiveSummonList() or {}
+        if type(activeList) ~= "table" or #activeList == 0 then
+            EA_DebugChampionRetinue("[ChampionRetinue] no active summon list available")
+            return {}, plan, "active_pool_empty"
+        end
+
+        local selected = {}
+        local usedTemplates = {}
+        local dreadUsed = 0
+        local familyAvailable = false
+
+        if plan.family ~= "" then
+            local probe = EA_BuildRetinueCandidates(activeList, plan, "VETERAN", usedTemplates, "family", plan.allowDread)
+            familyAvailable = (#probe > 0)
+        end
+
+        for slot = 1, plan.count do
+            local desiredTier = EA_GetRetinueTierForSlot(plan, slot)
+            local allowDread = plan.allowDread == true and dreadUsed < 1 and desiredTier == "ELITE"
+            local source = familyAvailable and "family" or "creatureType"
+            local candidates = EA_BuildRetinueCandidates(activeList, plan, desiredTier, usedTemplates, source, allowDread)
+            local picked = EA_SelectOneRetinueCandidate(candidates)
+
+            if not picked and source == "family" then
+                candidates = EA_BuildRetinueCandidates(activeList, plan, desiredTier, usedTemplates, "creatureType", allowDread)
+                picked = EA_SelectOneRetinueCandidate(candidates)
+                source = picked and "creatureType" or source
+            end
+
+            if not picked or type(picked.entry) ~= "table" then
+                EA_DebugChampionRetinue(string.format(
+                    "[ChampionRetinue] selection stopped slot=%d/%d reason=no_candidate source=%s family=%s type=%s",
+                    slot,
+                    plan.count,
+                    tostring(source),
+                    tostring(plan.family ~= "" and plan.family or "-"),
+                    tostring(plan.creatureType)
+                ))
+                break
+            end
+
+            local entry = picked.entry
+            local templateKey = string.lower(tostring(entry.template or ""))
+            usedTemplates[templateKey] = true
+            if tostring(entry.powerClass or ""):upper() == "DREAD" then
+                dreadUsed = dreadUsed + 1
+            end
+
+            selected[#selected + 1] = {
+                entry = entry,
+                tier = desiredTier,
+                source = source,
+            }
+        end
+
+        EA_DebugChampionRetinue(string.format(
+            "[ChampionRetinue] selected=%d/%d preset=%s party=%d level=%d family=%s type=%s",
+            #selected,
+            plan.count,
+            tostring(plan.preset),
+            tonumber(plan.partySize) or 0,
+            tonumber(plan.partyLevel) or 0,
+            tostring(plan.family ~= "" and plan.family or "-"),
+            tostring(plan.creatureType)
+        ))
+
+        for index, item in ipairs(selected) do
+            local entry = item.entry or {}
+            EA_DebugChampionRetinue(string.format(
+                "[ChampionRetinue] #%d tier=%s source=%s name=%s template=%s power=%s",
+                index,
+                tostring(item.tier),
+                tostring(item.source),
+                tostring(entry.name or "?"),
+                tostring(entry.template or "?"),
+                tostring(entry.powerClass or "STANDARD")
+            ))
+        end
+
+        if #selected == 0 then
+            return selected, plan, familyAvailable and "no_family_candidate_selected" or "no_creature_type_candidate"
+        end
+        return selected, plan, nil
+    end
+
+    local function EA_SpawnChampionRetinue(player, creatureType, champion, championLevel)
+        if type(SpawnHostileNearPlayer) ~= "function" then
+            EA_DebugChampionRetinue("[ChampionRetinue] SpawnHostileNearPlayer dependency unavailable")
+            return
+        end
+
+        local selected, plan, fallbackReason = EA_SelectChampionRetinueEntries(player, champion, creatureType, championLevel)
+        if #selected <= 0 then
+            EA_DebugChampionRetinue(string.format("[ChampionRetinue] no retinue spawned reason=%s", tostring(fallbackReason or "none")))
+            return
+        end
+
+        for index, item in ipairs(selected) do
+            local entry = item.entry
+            local tier = tostring(item.tier or "VETERAN")
+            local delayMs = 500 + ((index - 1) * 150)
+            local function spawnOne()
+                if Osi and Osi.ObjectExists and (Osi.ObjectExists(player) ~= 1) then
+                    EA_DebugChampionRetinue(string.format("[ChampionRetinue] spawn skipped #%d player_missing", index))
+                    return
+                end
+
+                local roll = {
+                    tier = tier,
+                    category = tier,
+                    delta = 0,
+                    targetLevel = tonumber(plan.partyLevel) or tonumber(championLevel) or 1,
+                    spawnRole = "champion_retinue",
+                    creatureType = tostring(entry.creatureType or creatureType or ""),
+                    noReputation = true,
+                    forceCombatJoin = true,
+                    preCombatGraceMs = 420,
+                    spawnDist = (tier == "ELITE") and 16 or 14,
+                    championRetinue = true,
+                    retinueFamily = tostring(plan.family or ""),
+                }
+
+                local spawned = SpawnHostileNearPlayer(player, 600, entry, roll, tostring(entry.creatureType or creatureType or ""))
+                if spawned and spawned ~= "" then
+                    EA_DebugChampionRetinue(string.format(
+                        "[ChampionRetinue] spawned #%d id=%s name=%s tier=%s",
+                        index,
+                        tostring(spawned),
+                        tostring(entry.name or entry.template or "?"),
+                        tostring(tier)
+                    ))
+                else
+                    EA_DebugChampionRetinue(string.format(
+                        "[ChampionRetinue] spawn failed #%d name=%s template=%s tier=%s",
+                        index,
+                        tostring(entry.name or "?"),
+                        tostring(entry.template or "?"),
+                        tostring(tier)
+                    ))
+                end
+            end
+
+            if Ext and Ext.Timer and Ext.Timer.WaitFor then
+                Ext.Timer.WaitFor(delayMs, spawnOne)
+            else
+                spawnOne()
+            end
+        end
     end
 
     local function EA_SelectEligibleProviderChampion(creatureType, partyLevel)
@@ -602,13 +1094,20 @@ function M.Build(deps)
             providerRejectedReason = "provider_rejected_bad_template"
         end
 
-        if (not champion) and fallbackPolicy.allowFallback and EA_GetPoolActiveSummonList then
-            local desiredLevel = tonumber(GetSafeLevel and GetSafeLevel(player) or nil) or 1
+        local allowActiveSummonFallback = fallbackPolicy.allowFallback
+            and not EA_IsChampionProviderRejectedByLevelGate(providerRejectedReason)
+
+        if (not champion) and allowActiveSummonFallback and EA_GetPoolActiveSummonList then
+            local desiredLevel = partyLevel
             local best = nil
             local bestScore = -99999
             local targetType = tostring(creatureType or "")
             for _, entry in ipairs(EA_GetPoolActiveSummonList() or {}) do
-                if type(entry) == "table"
+                local entryEligible = false
+                if type(entry) == "table" then
+                    entryEligible = EA_IsChampionEntryEligibleForPartyLevel(entry, partyLevel)
+                end
+                if entryEligible
                     and tostring(entry.creatureType or "") == targetType
                     and entry.template and entry.template ~= ""
                     and entry.championOnly ~= true
@@ -743,24 +1242,38 @@ function M.Build(deps)
         local spawnX, spawnY, spawnZ = nil, nil, nil
 
         if Osi.CreateOutOfSightAtDirection then
+            local championOosDistance = 12
+            local championMinOosDistance = 8
             if EA_IsDebugMode() then
-                DebugPrint("[Champion] Trying CreateOutOfSightAtDirection (4 attempts)")
+                DebugPrint(string.format("[Champion] Trying CreateOutOfSightAtDirection (4 attempts, dist=%d)", championOosDistance))
             end
             for attempt = 1, 4 do
                 local angleDeg = math.floor(EA_RandFloatCompat() * 360)
-                local ok, guid = pcall(Osi.CreateOutOfSightAtDirection, championSpawnTemplate, x, y, z, angleDeg, 1, 0, "")
+                local ok, guid = pcall(Osi.CreateOutOfSightAtDirection, championSpawnTemplate, x, y, z, angleDeg, championOosDistance, 0, "")
                 if ok and guid and guid ~= "" then
                     local sx, sy, sz = SafeGetPosition(guid)
+                    local actualDist = nil
                     if sx then
-                        enemy = guid
-                        spawnX, spawnY, spawnZ = sx, sy, sz
+                        local dx = (tonumber(sx) or 0) - (tonumber(x) or 0)
+                        local dz = (tonumber(sz) or 0) - (tonumber(z) or 0)
+                        actualDist = math.sqrt((dx * dx) + (dz * dz))
+                        if actualDist >= championMinOosDistance then
+                            enemy = guid
+                            spawnX, spawnY, spawnZ = sx, sy, sz
+                        else
+                            if EA_IsDebugMode() then
+                                DebugPrint(string.format("[Champion] CreateOutOfSightAtDirection rejected (too close %.2f < %.2f)", actualDist, championMinOosDistance))
+                            end
+                        end
+                    end
+                    if enemy then
                         if EA_IsDebugMode() then
-                            DebugPrint(string.format("[Champion] CreateOutOfSightAtDirection succeeded (attempt %d): %s", attempt, tostring(guid)))
+                            DebugPrint(string.format("[Champion] CreateOutOfSightAtDirection succeeded (attempt %d, requested=%d, actual=%.2f): %s", attempt, championOosDistance, actualDist or 0, tostring(guid)))
                         end
                         if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("ChampionSpawn") end
                         break
                     end
-                    SafeOsiExec(Osi.RequestDelete, guid)
+                    EA_DeleteRejectedChampionCandidate(guid, "oos_distance_rejected")
                 elseif EA_IsDebugMode() and attempt == 1 then
                     DebugPrint(string.format("[Champion] CreateOutOfSightAtDirection failed (attempt %d): ok=%s guid=%s", attempt, tostring(ok), tostring(guid)))
                 end
@@ -811,7 +1324,7 @@ function M.Build(deps)
                             if EA_IsRobust() then
                                 EA_LogEvent("CHAMPION", "Rejected LoS spawn id=" .. tostring(created))
                             end
-                            SafeOsiExec(Osi.RequestDelete, created)
+                            EA_DeleteRejectedChampionCandidate(created, "los_rejected")
                         else
                             enemy = created
                             spawnX, spawnY, spawnZ = validX, validY, validZ
@@ -918,15 +1431,27 @@ function M.Build(deps)
 
         EA_WaitForMaxHP(enemy, 4, 140, function(maxhp)
             if tonumber(maxhp) and tonumber(maxhp) > 1 then
-                SafeOsiExec(Osi.SetHitpoints, enemy, tonumber(maxhp))
-                DebugPrint("Champion HP normalized to max:", tostring(maxhp))
+                EA_NormalizeChampionHPToCurrentMax(enemy, "initial")
             else
                 DebugPrint("Champion has low/invalid max HP after scaling:", tostring(champion.template), tostring(maxhp))
             end
-            EA_StartChampionHostility()
+            if Ext and Ext.Timer and Ext.Timer.WaitFor then
+                Ext.Timer.WaitFor(420, function()
+                    EA_NormalizeChampionHPToCurrentMax(enemy, "post_status")
+                end)
+                Ext.Timer.WaitFor(820, function()
+                    EA_NormalizeChampionHPToCurrentMax(enemy, "pre_hostility")
+                    EA_StartChampionHostility()
+                end)
+            else
+                EA_StartChampionHostility()
+            end
         end)
         if Ext and Ext.Timer and Ext.Timer.WaitFor then
-            Ext.Timer.WaitFor(750, EA_StartChampionHostility)
+            Ext.Timer.WaitFor(1000, function()
+                EA_NormalizeChampionHPToCurrentMax(enemy, "hostility_fallback")
+                EA_StartChampionHostility()
+            end)
         end
 
         local championCueContext = {
@@ -1051,6 +1576,7 @@ function M.Build(deps)
                     xpOriginalStat = championXpOriginalStat,
                     xpOriginalRewardGuid = championXpOriginalRewardGuid,
                     tier = "CHAMPION",
+                    disableAggressiveAdvance = true,
                     xpRewardCategory = championRewardCat,
                     spawnTemplate = championSpawnTemplate,
                     tsCreated = EA_NowMs(),
@@ -1072,12 +1598,14 @@ function M.Build(deps)
             end
         end
 
-        local showChampionPopup = EA_GetSettingBool("MCM_ShowUINotifications", true)
-            and EA_GetSettingBool("MCM_ShowChampionArrivalPopup", false)
+        -- Champion popups are retired for release; MazzleDocs will own richer presentation later.
+        local showChampionPopup = false
         if showChampionPopup then
             SafeOsiExec(Osi.OpenMessageBox, player, string.format("%s has come for you.", champion.name))
             SafeOsiExec(Osi.PlaySound, player, "UI_Notification_CombatStarted")
         end
+
+        EA_SpawnChampionRetinue(player, creatureType, champion, championLevel)
 
         print(string.format("[EnemyAmbush] Champion arrived: %s (%s reputation, Level %d)", champion.name, creatureType, championLevel))
         return true

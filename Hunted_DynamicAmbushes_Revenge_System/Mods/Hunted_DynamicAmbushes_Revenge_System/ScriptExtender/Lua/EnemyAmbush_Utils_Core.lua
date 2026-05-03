@@ -989,8 +989,10 @@ local function EA_LogStrictVarsUnavailable(diag)
 
     local debugEnabled = false
     if EA and type(EA["EA_GetSettingFromSnapshot"]) == "function" then
+        local okLogging, outLogging = pcall(EA["EA_GetSettingFromSnapshot"], "MCM_EnableDebugLogging", false)
+        debugEnabled = okLogging and outLogging == true
         local okDebug, outDebug = pcall(EA["EA_GetSettingFromSnapshot"], "MCM_DebugMode", false)
-        debugEnabled = okDebug and outDebug == true
+        debugEnabled = debugEnabled or (okDebug and outDebug == true)
     end
     if debugEnabled ~= true then
         return

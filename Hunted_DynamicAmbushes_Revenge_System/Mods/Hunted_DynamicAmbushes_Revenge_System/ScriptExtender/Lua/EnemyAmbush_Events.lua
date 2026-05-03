@@ -167,7 +167,8 @@ end
 
 local function EA_DebugEnabled()
     if type(EA_ReadSettingBool) == "function" then
-        return EA_ReadSettingBool("MCM_DebugMode", false) == true
+        return EA_ReadSettingBool("MCM_EnableDebugLogging", false) == true
+            or EA_ReadSettingBool("MCM_DebugMode", false) == true
     end
     return false
 end

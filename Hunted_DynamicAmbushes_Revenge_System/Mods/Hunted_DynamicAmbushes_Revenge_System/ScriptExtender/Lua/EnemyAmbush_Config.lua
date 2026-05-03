@@ -115,6 +115,7 @@ end
 
 -- ========= MCM loader =========
 EA_MCM_IDS = MCMContract.IDS or EA_MCM_IDS or {}
+EA_MCM_BLUEPRINT_IDS = MCMContract.BLUEPRINT_IDS or EA_MCM_IDS
 
 EA_MCM_WATCHED = {}
 for _, id in ipairs(EA_MCM_IDS) do
@@ -205,7 +206,8 @@ end
 
 EA_ConfigDebugEnabled = function()
     if type(EA_ReadSettingBool) == "function" then
-        return EA_ReadSettingBool("MCM_DebugMode", false) == true
+        return EA_ReadSettingBool("MCM_EnableDebugLogging", false) == true
+            or EA_ReadSettingBool("MCM_DebugMode", false) == true
     end
     return false
 end
@@ -487,7 +489,7 @@ end
     EA_REQUIRED_MCM_DEFAULTS_APPLIED = false
 
     -- Only load settings relevant to Enemy Ambush
-    local ids = EA_MCM_IDS or {}
+    local ids = EA_MCM_BLUEPRINT_IDS or EA_MCM_IDS or {}
 
     local loadedCount = 0
     local loadedEntries = {}

@@ -3085,12 +3085,12 @@ elseif args[1] == "escapetune" then
     elseif mode == "default" or mode == "rc" then
         EA_ApplyEscapeTune({
             ["MCM_EnableAmbusherEscape"] = true,
-            ["MCM_EscapeStartTurn"] = 10,
+            ["MCM_EscapeStartTurn"] = 6,
             ["MCM_EscapeDC"] = 14,
             ["MCM_EscapeHPThreshold"] = 50,
-            ["MCM_EscapeMaxPerCombat"] = 2,
+            ["MCM_EscapeMaxPerCombat"] = 1,
         })
-        print("[EnemyAmbush] Escape tune restored to RC defaults (turn=10, dc=14, hp<=50, max=2)")
+        print("[EnemyAmbush] Escape tune restored to default preset values (turn=6, dc=14, hp<=50, max=1)")
         EA_PrintEscapeTuneSnapshot()
         return
     end
@@ -3290,11 +3290,32 @@ local statusNames = {
   "EA_AMBUSHER"
 }
 
--- Your current champion system applies EA_CHAMPION_* type packages
--- (see CHAMPION_TYPE_STATUS_BY_TYPE in Systems)
+local authoredChampionStatusByType =
+  (SystemsDataTables and SystemsDataTables.CHAMPION_TYPE_STATUS_BY_TYPE)
+  or {
+    Aberration = "EA_CHAMPION_ABERRATION",
+    Beast = "EA_CHAMPION_BEAST",
+    Celestial = "EA_CHAMPION_CELESTIAL",
+    Construct = "EA_CHAMPION_CONSTRUCT",
+    Dragon = "EA_CHAMPION_DRAGON",
+    Elemental = "EA_CHAMPION_ELEMENTAL",
+    Fey = "EA_CHAMPION_FEY",
+    Fiend = "EA_CHAMPION_FIEND",
+    Giant = "EA_CHAMPION_GIANT",
+    Humanoid = "EA_CHAMPION_HUMANOID",
+    Monstrosity = "EA_CHAMPION_MONSTROSITY",
+    Ooze = "EA_CHAMPION_OOZE",
+    Plant = "EA_CHAMPION_PLANT",
+    Undead = "EA_CHAMPION_UNDEAD",
+  }
+
+-- Only validate authored champion type packages; provider/custom reputation keys do not imply EA_CHAMPION_* stats.
 if type(CreatureReputation) == "table" then
   for creatureType, _ in pairs(CreatureReputation) do
-    statusNames[#statusNames+1] = "EA_CHAMPION_" .. string.upper(tostring(creatureType))
+    local statusName = authoredChampionStatusByType[tostring(creatureType)]
+    if statusName then
+      statusNames[#statusNames+1] = statusName
+    end
   end
 end
 
@@ -3852,7 +3873,6 @@ local getBalanceProfileFn = EA["EA_GetBalanceProfile"] or EA_GetBalanceProfile
 local getBalanceProfileLabelFn = EA["EA_GetBalanceProfileLabel"] or EA_GetBalanceProfileLabel
 local getArrivalCuePolicyFn = EA["EA_GetArrivalCuePolicy"] or EA_GetArrivalCuePolicy
 local getArrivalCuePolicyLabelFn = EA["EA_GetArrivalCuePolicyLabel"] or EA_GetArrivalCuePolicyLabel
-local getArrivalCueChanceScaleFn = EA["EA_GetArrivalCueChanceScale"] or EA_GetArrivalCueChanceScale
 local getSpawnPlacementModeFn = EA["EA_GetSpawnPlacementMode"] or EA_GetSpawnPlacementMode
 local getSpawnPlacementModeLabelFn = EA["EA_GetSpawnPlacementModeLabel"] or EA_GetSpawnPlacementModeLabel
 local function callBool(fn, fallback)
@@ -3937,8 +3957,6 @@ local arrivalCuePolicyRaw = tostring(getSetting("MCM_ArrivalCuePolicy", "BALANCE
 local arrivalCuePolicyEffective = callString(getArrivalCuePolicyFn, arrivalCuePolicyRaw)
 local arrivalCuePolicyRawLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyRaw, arrivalCuePolicyRaw)
 local arrivalCuePolicyEffectiveLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyEffective, arrivalCuePolicyEffective)
-local arrivalCueChanceScaleRaw = math.floor(tonumber(getSetting("MCM_ArrivalCueChanceScale", 100)) or 100)
-local arrivalCueChanceScaleEffective = callInt(getArrivalCueChanceScaleFn, arrivalCueChanceScaleRaw)
 local spawnPlacementModeRaw = tostring(getSetting("MCM_SpawnPlacementMode", "AUTO"))
 local spawnPlacementModeEffective = callString(getSpawnPlacementModeFn, spawnPlacementModeRaw)
 local spawnPlacementModeRawLabel = callLabel(getSpawnPlacementModeLabelFn, spawnPlacementModeRaw, spawnPlacementModeRaw)
@@ -3953,10 +3971,9 @@ print(string.format("  Balance=%s (%s)",
     balanceProfileEffectiveLabel,
     balanceProfileEffective))
 print("  FodderCurve=Fixed 7+:50% 10+:30% 12+:10%")
-print(string.format("  ArrivalCue=%s (%s)  ChanceScale=%d%%",
+print(string.format("  ArrivalCue=%s (%s)",
     arrivalCuePolicyEffectiveLabel,
-    arrivalCuePolicyEffective,
-    arrivalCueChanceScaleEffective))
+    arrivalCuePolicyEffective))
 print(string.format("  PlacementMode=%s (%s)",
     spawnPlacementModeEffectiveLabel,
     spawnPlacementModeEffective))
@@ -3979,8 +3996,8 @@ print(string.format("  Effective Cooldown: enabled=%s  minutes=%d",
     cooldownEffectiveMinutes))
 print(string.format("  Raw MCM:   XP%%=%s  DisableLoot=%s  AllowChampionLoot=%s",
     tostring(EA_DebugGetSettingRaw("MCM_AmbushXPPercent", 10)),
-    tostring(EA_DebugGetSettingBool("MCM_DisableAmbushLoot", true)),
-    tostring(EA_DebugGetSettingBool("MCM_AllowChampionLoot", false))))
+    tostring(EA_DebugGetSettingBool("MCM_DisableAmbushLoot", false)),
+    tostring(EA_DebugGetSettingBool("MCM_AllowChampionLoot", true))))
 print(string.format("  Raw MCM Balance: Profile=%s (%s)",
     balanceProfileRawLabel,
     balanceProfileRaw))

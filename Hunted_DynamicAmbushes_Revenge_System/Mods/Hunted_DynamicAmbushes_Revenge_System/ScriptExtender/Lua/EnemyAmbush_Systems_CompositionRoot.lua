@@ -498,6 +498,15 @@ local function BuildOwnerRuntimeBag(existingRuntimes, supportBag)
         end,
         GetSafeLevel = supportBag.GetSafeLevel,
         EA_GetSettingBool = EA["EA_ReadSettingBool"],
+        EA_ReadSettingRaw = EA["EA_ReadSettingRaw"],
+        GetPartySize = supportBag.GetPartySize,
+        SpawnHostileNearPlayer = function(...)
+            local fn = GetRuntimeFunction("SpawnPlacement", "SpawnHostileNearPlayer")
+            if type(fn) == "function" then
+                return fn(...)
+            end
+            return nil
+        end,
         EA_IsDebugMode = EA_IsDebugMode,
         DebugPrint = DebugPrint,
         SafeGetPosition = SafeGetPosition,
@@ -580,6 +589,8 @@ local function BuildOwnerRuntimeBag(existingRuntimes, supportBag)
         SystemsDataTables = "tablelike",
         EA_GetPoolActiveSummonList = "callable",
         GetSafeLevel = "callable",
+        GetPartySize = "callable",
+        SpawnHostileNearPlayer = "callable",
         DebugPrint = "callable",
         SafeGetPosition = "callable",
         SafeOsiExec = "callable",

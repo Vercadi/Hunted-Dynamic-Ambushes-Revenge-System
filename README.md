@@ -2,6 +2,8 @@
 
 Hunted adds systemic retaliation gameplay to Baldur's Gate 3. Hostile territory becomes more dangerous over time, repeated creature-type kills build revenge pressure, and enemies can retaliate through exploration, rest, and champion ambushes.
 
+Current release: `1.0.0`
+
 ## Requirements
 
 - Baldur's Gate 3 Script Extender version `30` or newer
@@ -15,6 +17,7 @@ BG3MCM is a hard dependency. The mod uses it for the supported settings UI and s
 - Creature-type reputation and revenge escalation
 - Region and safety gating
 - Champion retaliation encounters
+- Champion retinues on harder presets and larger parties
 - Preset-based pacing and difficulty pressure
 - Combat Extender-aware scaling
 - Server-side Lua API for compatibility patches

@@ -61,6 +61,7 @@ function M.Build(deps)
     local EA_PrimeCharacterTemplateCache = deps.EA_PrimeCharacterTemplateCache or function() return nil end
     local EA_ReadSettingBool = deps.EA_ReadSettingBool or (EA and EA["EA_ReadSettingBool"])
     local EA_ReadSettingNumber = deps.EA_ReadSettingNumber or (EA and EA["EA_ReadSettingNumber"])
+    local EA_GetPreset = deps.EA_GetPreset or (EA and EA["EA_GetPreset"]) or function() return nil end
     local EA_NULL_GUID = "NULL_00000000-0000-0000-0000-000000000000"
     local EA_ARRIVAL_INVISIBILITY_STATUS = "EA_ARRIVAL_INVISIBLE"
     local EA_ESCAPE_INVISIBILITY_STATUS = "EA_ESCAPE_INVISIBLE"
@@ -72,7 +73,7 @@ function M.Build(deps)
     local EA_ESCAPE_IMMINENT_DURATION = 30
     local EA_ESCAPE_FAIL_STAGGERED_DURATION = 6
     local EA_ESCAPE_PENDING_RESOLVE_TURNS = 1
-    local EA_ESCAPE_FLEE_RANGE_DEFAULT = 16.0
+    local EA_ESCAPE_FLEE_RANGE_DEFAULT = 12.0
     if type(EnemyData) ~= "table" then
         EnemyData = {}
     end
@@ -194,6 +195,26 @@ function M.Build(deps)
             n = math.floor(n + 0.5)
         end
         return n
+    end
+    local function EA_GetPresetEscapeNumber(field, fallback, minValue, maxValue, integer)
+        local value = nil
+        local preset = type(EA_GetPreset) == "function" and EA_GetPreset() or nil
+        if type(preset) == "table" then
+            value = preset[field]
+        end
+        if EA_DebugEnabled() and type(EA_ReadSettingNumber) == "function" then
+            local settingIdByField = {
+                escapeStartTurn = "MCM_EscapeStartTurn",
+                escapeDC = "MCM_EscapeDC",
+                escapeHPThreshold = "MCM_EscapeHPThreshold",
+                escapeMaxPerCombat = "MCM_EscapeMaxPerCombat",
+            }
+            local settingId = settingIdByField[field]
+            if settingId then
+                value = EA_ReadSettingNumber(settingId, value or fallback)
+            end
+        end
+        return EA_ClampEscapeSettingNumber(value, fallback, minValue, maxValue, integer)
     end
     local function EA_EnsureCombatEscapeState(combatKey)
         local normalized = EA_NormalizeCombatKey(combatKey)
@@ -1100,8 +1121,8 @@ function M.Build(deps)
         end
 
         local turnCount = tonumber(state and state.turnCount) or 0
-        local startTurn = EA_ClampEscapeSettingNumber(
-            type(EA_ReadSettingNumber) == "function" and EA_ReadSettingNumber("MCM_EscapeStartTurn", 10) or 10,
+        local startTurn = EA_GetPresetEscapeNumber(
+            "escapeStartTurn",
             10,
             1,
             30,
@@ -1112,8 +1133,8 @@ function M.Build(deps)
             return false
         end
 
-        local maxEscapes = EA_ClampEscapeSettingNumber(
-            type(EA_ReadSettingNumber) == "function" and EA_ReadSettingNumber("MCM_EscapeMaxPerCombat", 2) or 2,
+        local maxEscapes = EA_GetPresetEscapeNumber(
+            "escapeMaxPerCombat",
             2,
             0,
             6,
@@ -1132,8 +1153,8 @@ function M.Build(deps)
             return false
         end
 
-        local hpThreshold = EA_ClampEscapeSettingNumber(
-            type(EA_ReadSettingNumber) == "function" and EA_ReadSettingNumber("MCM_EscapeHPThreshold", 50) or 50,
+        local hpThreshold = EA_GetPresetEscapeNumber(
+            "escapeHPThreshold",
             50,
             1,
             100,
@@ -1170,8 +1191,8 @@ function M.Build(deps)
         local tierBonus = tonumber(tierBonusByBand[tier]) or 0
         local profileBonus = tonumber(profile and profile.bonus) or 0
         local totalBonus = tierBonus + profileBonus
-        local dc = EA_ClampEscapeSettingNumber(
-            type(EA_ReadSettingNumber) == "function" and EA_ReadSettingNumber("MCM_EscapeDC", 14) or 14,
+        local dc = EA_GetPresetEscapeNumber(
+            "escapeDC",
             14,
             5,
             25,
@@ -1555,6 +1576,7 @@ function M.Build(deps)
             EA_P0Inc("enterCombat.ignoredNonAmbush")
             return
         end
+        local isChampionAmbusher = (type(spawnData) == "table" and spawnData.isChampion == true)
         if type(spawnData) == "table" and spawnData.joinDeferred then
             EA_P0Inc("enterCombat.ignoredDeferredJoin")
             return
@@ -1683,7 +1705,7 @@ function M.Build(deps)
                     end
                     local teleportEligible = (failAgeMs >= EA_ENTER_COMBAT_TELEPORT_MIN_DELAY_MS) and farEnough
 
-                    if (not EA_EnterCombatTeleportUsedByPair[key]) and Osi.TeleportTo and (not partyInCombat) and teleportEligible then
+                    if (not isChampionAmbusher) and (not EA_EnterCombatTeleportUsedByPair[key]) and Osi.TeleportTo and (not partyInCombat) and teleportEligible then
                         EA_EnterCombatTeleportUsedByPair[key] = true
                         EA_P0Inc("enterCombat.teleportRescueAttempted")
                         UpdateMetric("enterCombatTeleportFallbackUsed")
@@ -1713,6 +1735,8 @@ function M.Build(deps)
                             skipReason = "already_used"
                         elseif not Osi.TeleportTo then
                             skipReason = "no_teleport_api"
+                        elseif isChampionAmbusher then
+                            skipReason = "champion"
                         elseif partyInCombat then
                             skipReason = "party_in_combat"
                         elseif not teleportEligible then

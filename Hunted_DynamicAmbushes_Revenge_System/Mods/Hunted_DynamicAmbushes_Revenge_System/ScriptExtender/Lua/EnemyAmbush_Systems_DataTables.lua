@@ -430,9 +430,10 @@ local DataTables = {
     MAX_SPAWN_HEIGHT_DELTA = 4.0,
 
     BAD_CHAMPION_TEMPLATES = {
-        -- Safety deny-list: known problematic story/shell candidate for champion flow.
+        -- Safety deny-list: known problematic story/shell/visual candidates for champion flow.
         ["44b9e114-b5ab-4d64-bb91-eb9114d2fd3a"] = true, -- Dark Justiciar Giant shell template
         ["80db81be-27d4-42a8-a2b0-4b7fbfd74f01"] = true, -- Skeletal Dragon (Undead variant) broken body rig at runtime
+        ["2751f474-424e-4693-85dc-cb5bebbba259"] = true, -- Beholder Tyrant visual/name failure in generic champion flow
     },
 
     ENTRY_BAND_ORDER = {

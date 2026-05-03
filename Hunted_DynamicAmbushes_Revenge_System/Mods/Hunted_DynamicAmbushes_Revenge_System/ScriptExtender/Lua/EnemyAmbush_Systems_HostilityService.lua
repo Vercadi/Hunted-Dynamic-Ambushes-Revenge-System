@@ -20,6 +20,10 @@ local EA_RELATION_FORM_PROBE = {
 
 local function EA_HostilityDebugEnabled()
     if EA and type(EA["EA_GetSettingFromSnapshot"]) == "function" then
+        local okLogging, logging = pcall(EA["EA_GetSettingFromSnapshot"], "MCM_EnableDebugLogging", false)
+        if okLogging and logging == true then
+            return true
+        end
         local ok, out = pcall(EA["EA_GetSettingFromSnapshot"], "MCM_DebugMode", false)
         if ok then
             return out == true
@@ -1028,6 +1032,7 @@ EA_MakeAmbushHostile = function(enemy, player)
     local enemyKey = EA_NormalizeUUID(enemy) or enemy
     local ambushId = nil
     local disableAggressiveAdvance = false
+    local forceCombatJoin = false
     do
         local spawned = EA_Spawned and EA_Spawned() or nil
         if type(spawned) == "table" then
@@ -1035,7 +1040,8 @@ EA_MakeAmbushHostile = function(enemy, player)
             if type(sd) == "table" then
                 local aid = tostring(sd.ambushId or "")
                 if aid ~= "" then ambushId = aid end
-                disableAggressiveAdvance = (sd.disableAggressiveAdvance == true)
+                disableAggressiveAdvance = (sd.disableAggressiveAdvance == true) or (sd.isChampion == true)
+                forceCombatJoin = (sd.forceCombatJoin == true) or (tostring(sd.spawnRole or "") == "champion_retinue")
             end
         end
     end
@@ -1170,8 +1176,11 @@ EA_MakeAmbushHostile = function(enemy, player)
         now = tonumber(EA_NowMs()) or 0
     end
     local catchupSoftMaxDistance = EA_HOSTILE_IN_COMBAT_APPROACH_MAX_DISTANCE + EA_HOSTILE_IN_COMBAT_APPROACH_TOLERANCE
-            local joinDecision = EA_EvaluateDeferredSupportJoinRulesCompat(joinWindow, playerInCombat, distToPlayer, catchupSoftMaxDistance)
+    local joinDecision = EA_EvaluateDeferredSupportJoinRulesCompat(joinWindow, playerInCombat, distToPlayer, catchupSoftMaxDistance)
     local allowForcedJoin = (type(joinDecision) == "table" and joinDecision.allowForcedJoin == true) or (not playerInCombat)
+    if forceCombatJoin then
+        allowForcedJoin = true
+    end
     local joinGraceActive = (type(joinDecision) == "table" and joinDecision.joinGraceActive == true) or false
     local joinGraceAgeMs = (type(joinDecision) == "table" and tonumber(joinDecision.joinGraceAgeMs)) or 0
     local forceJoinMaxDistance = (type(joinDecision) == "table" and tonumber(joinDecision.forceJoinMaxDistance)) or 35

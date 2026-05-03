@@ -60,13 +60,13 @@ contract.GLOBAL_SETTING_IDS = {
     ["MCM_StrictProgressionGates"] = true,
     ["MCM_UseCompositionGuards"] = true,
     ["MCM_ArrivalCuePolicy"] = true,
-    ["MCM_ArrivalCueChanceScale"] = true,
 }
 
 contract.SUPPORT_SETTING_IDS = {
     ["MCM_CustomBasePreset"] = true,
     ["MCM_SafetyChecks"] = true,
     ["MCM_PointBudget"] = true,
+    ["MCM_EnableDebugLogging"] = true,
     ["MCM_DebugMode"] = true,
     ["MCM_RobustMode"] = true,
     ["MCM_QuickTestMode"] = true,
@@ -87,13 +87,13 @@ contract.PRESET_SETTING_BINDINGS = {
     { id = "MCM_LongRestDelayMaxMinutes", field = "longDelayMaxMinutes", default = 20, kind = "number" },
     { id = "MCM_AmbushIntensity", field = "intensity", default = 0.90, kind = "number" },
     { id = "MCM_EnableAmbusherEscape", field = "enableAmbusherEscape", default = true, kind = "bool" },
-    { id = "MCM_EscapeStartTurn", field = "escapeStartTurn", default = 5, kind = "number" },
+    { id = "MCM_EscapeStartTurn", field = "escapeStartTurn", default = 6, kind = "number" },
     { id = "MCM_EscapeDC", field = "escapeDC", default = 14, kind = "number" },
     { id = "MCM_EscapeHPThreshold", field = "escapeHPThreshold", default = 50, kind = "number" },
-    { id = "MCM_EscapeMaxPerCombat", field = "escapeMaxPerCombat", default = 2, kind = "number" },
+    { id = "MCM_EscapeMaxPerCombat", field = "escapeMaxPerCombat", default = 1, kind = "number" },
     { id = "MCM_AmbushXPPercent", field = "xpPct", default = 0, kind = "number" },
-    { id = "MCM_DisableAmbushLoot", field = "disableLoot", default = true, kind = "bool" },
-    { id = "MCM_AllowChampionLoot", field = "allowChampionLoot", default = false, kind = "bool" },
+    { id = "MCM_DisableAmbushLoot", field = "disableLoot", default = false, kind = "bool" },
+    { id = "MCM_AllowChampionLoot", field = "allowChampionLoot", default = true, kind = "bool" },
 }
 
 contract.HIDDEN_PRESET_KNOBS = {
@@ -170,7 +170,6 @@ contract.IDS = {
     "MCM_ShowAmbushWarningNotifications",
     "MCM_ShowChampionArrivalPopup",
     "MCM_ArrivalCuePolicy",
-    "MCM_ArrivalCueChanceScale",
     "MCM_SpawnPlacementMode",
     "MCM_EnableReputation",
     "MCM_EnableOnRest",
@@ -181,6 +180,7 @@ contract.IDS = {
     "MCM_PointBudget",
     "MCM_AmbushIntensity",
     "MCM_ScaleWithPartySize",
+    "MCM_EnableDebugLogging",
     "MCM_DebugMode",
     "MCM_RobustMode",
     "MCM_AmbushXPPercent",
@@ -207,6 +207,39 @@ contract.IDS = {
     "MCM_EscapeMaxPerCombat",
 }
 
+-- Settings that are actually present in MCM_blueprint.json for the release UI.
+-- Runtime-only preset knobs remain in IDS so the mod can apply preset-owned
+-- values internally without asking BG3MCM to load/save settings it cannot see.
+contract.BLUEPRINT_IDS = {
+    "MCM_DifficultyPreset",
+    "MCM_AdvancedMode",
+    "MCM_CustomBasePreset",
+    "MCM_CombatExtenderMode",
+    "MCM_AmbushIntensity",
+    "MCM_ScaleWithPartySize",
+    "MCM_StrictProgressionGates",
+    "MCM_UseCompositionGuards",
+    "MCM_BalanceProfile",
+    "MCM_EnableReputation",
+    "MCM_ReputationDecayRate",
+    "MCM_EnableOnRest",
+    "MCM_EnableTimeInDangerPressure",
+    "MCM_SafetyChecks",
+    "MCM_CampAmbushes",
+    "MCM_EnableAmbushCooldown",
+    "MCM_AmbushCooldownMinutes",
+    "MCM_EnableSummons",
+    "MCM_EnableVanillaSummons",
+    "MCM_ApplyPartySurprised",
+    "MCM_ArrivalCuePolicy",
+    "MCM_SpawnPlacementMode",
+    "MCM_EnableAmbusherEscape",
+    "MCM_EnableDebugLogging",
+    "MCM_AmbushXPPercent",
+    "MCM_DisableAmbushLoot",
+    "MCM_AllowChampionLoot",
+}
+
 contract.BOOL_IDS = {
     ["MCM_EnableSummons"] = true,
     ["MCM_EnableVanillaSummons"] = true,
@@ -222,6 +255,7 @@ contract.BOOL_IDS = {
     ["MCM_AdvancedMode"] = true,
     ["MCM_ShowReputationWarnings"] = true,
     ["MCM_ScaleWithPartySize"] = true,
+    ["MCM_EnableDebugLogging"] = true,
     ["MCM_DebugMode"] = true,
     ["MCM_RobustMode"] = true,
     ["MCM_DisableAmbushLoot"] = true,
@@ -239,7 +273,6 @@ contract.NUMERIC_RULES = {
     -- Integer-like controls are modeled as slider_int in blueprint and enforced
     -- here again for server-side safety.
     ["MCM_ReputationDecayRate"] = { min = 0, max = 1, integer = false },
-    ["MCM_ArrivalCueChanceScale"] = { min = 0, max = 200, integer = true },
     ["MCM_PointBudget"] = { min = 0, max = 30, integer = true },
     ["MCM_AmbushIntensity"] = { min = 0.5, max = 2, integer = false },
     ["MCM_AmbushXPPercent"] = { min = 0, max = 100, integer = true },
@@ -379,8 +412,8 @@ contract.PRESETS = {
         enableAmbusherEscape = true,
         escapeStartTurn = 6,
         escapeDC = 12,
-        escapeHPThreshold = 45,
-        escapeMaxPerCombat = 1,
+        escapeHPThreshold = 55,
+        escapeMaxPerCombat = 2,
         vengefulMult = 0.55,
         xpPct = 100,
         disableLoot = false,
@@ -399,14 +432,14 @@ contract.PRESETS = {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 5,
+        escapeStartTurn = 6,
         escapeDC = 14,
         escapeHPThreshold = 50,
-        escapeMaxPerCombat = 2,
+        escapeMaxPerCombat = 1,
         vengefulMult = 0.70,
         xpPct = 30,
-        disableLoot = true,
-        allowChampionLoot = false,
+        disableLoot = false,
+        allowChampionLoot = true,
     },
     Relentless = {
         shortChancePct = 7,
@@ -421,14 +454,14 @@ contract.PRESETS = {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 5,
-        escapeDC = 15,
-        escapeHPThreshold = 60,
-        escapeMaxPerCombat = 2,
+        escapeStartTurn = 7,
+        escapeDC = 16,
+        escapeHPThreshold = 45,
+        escapeMaxPerCombat = 1,
         vengefulMult = 0.90,
         xpPct = 20,
-        disableLoot = true,
-        allowChampionLoot = false,
+        disableLoot = false,
+        allowChampionLoot = true,
     },
     Hunted = {
         shortChancePct = 9,
@@ -443,10 +476,10 @@ contract.PRESETS = {
         applyPartySurprised = true,
         enableTimeInDangerPressure = true,
         enableAmbusherEscape = true,
-        escapeStartTurn = 4,
-        escapeDC = 16,
-        escapeHPThreshold = 70,
-        escapeMaxPerCombat = 3,
+        escapeStartTurn = 7,
+        escapeDC = 17,
+        escapeHPThreshold = 40,
+        escapeMaxPerCombat = 1,
         vengefulMult = 1.10,
         xpPct = 10,
         disableLoot = true,
@@ -466,8 +499,17 @@ for _, id in ipairs(contract.IDS or {}) do
     contract.ID_SET[tostring(id)] = true
 end
 
+contract.BLUEPRINT_ID_SET = {}
+for _, id in ipairs(contract.BLUEPRINT_IDS or {}) do
+    contract.BLUEPRINT_ID_SET[tostring(id)] = true
+end
+
 function contract.IsKnownId(id)
     return type(id) == "string" and contract.ID_SET[id] == true
+end
+
+function contract.IsBlueprintSetting(id)
+    return type(id) == "string" and contract.BLUEPRINT_ID_SET[id] == true
 end
 
 function contract.GetSettingOwnerKind(id)

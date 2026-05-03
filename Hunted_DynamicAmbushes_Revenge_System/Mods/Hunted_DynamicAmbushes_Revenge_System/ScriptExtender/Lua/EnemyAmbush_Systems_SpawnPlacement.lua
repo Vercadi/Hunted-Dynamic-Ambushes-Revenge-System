@@ -5,7 +5,14 @@ function M.Build(deps)
     deps = deps or {}
     local EnemyData = deps.EnemyData or Ext.Require("EnemyAmbush_Data.lua")
     local UpdateMetric = deps.UpdateMetric or (EA and EA["UpdateMetric"]) or function() end
-    local EA_GetSettingBool = deps.EA_GetSettingBool or (EA and EA["EA_GetSettingBool"]) or function(_, fallback) return fallback == true end
+    local EA_GetSettingBoolRaw = deps.EA_GetSettingBool or (EA and EA["EA_GetSettingBool"]) or function(_, fallback) return fallback == true end
+    local function EA_GetSettingBool(settingId, fallback)
+        if settingId == "MCM_DebugMode" then
+            return EA_GetSettingBoolRaw("MCM_EnableDebugLogging", false) == true
+                or EA_GetSettingBoolRaw("MCM_DebugMode", false) == true
+        end
+        return EA_GetSettingBoolRaw(settingId, fallback)
+    end
     local EA_GetSpawnPlacementMode = deps.EA_GetSpawnPlacementMode or (EA and EA["EA_GetSpawnPlacementMode"]) or function() return "AUTO" end
     local PickEnemyTemplate = deps.PickEnemyTemplate
     local ValidateEnemyData = deps.ValidateEnemyData
@@ -476,12 +483,13 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
     if forceFindValidPosition then
         placementMode = "FIND_VALID_ONLY"
     end
+    local spawnRole = (type(ctx.ambushRoll) == "table" and tostring(ctx.ambushRoll.spawnRole or "")) or ""
+    local autoHybridSupport = (placementMode == "AUTO" and (spawnRole == "support" or spawnRole == "champion_retinue") and not forceFindValidPosition)
     local rawAnchorX, rawAnchorY, rawAnchorZ = EA_TryGetPositionViaOsi(player)
     local createOutOfSightAvailable = (Osi and Osi.CreateOutOfSightAtDirection and x and y and z) and true or false
     local createOutOfSightTooCloseRejects = 0
     local createOutOfSightZeroDistanceRejects = 0
     local createOutOfSightHardFailures = 0
-    local autoShortCircuitedToFindValid = false
     local function EA_IsTooCloseToPlayer(px, pz)
         if (px == nil) or (pz == nil) then
             return false, 0
@@ -493,7 +501,12 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
     end
 
     if EA_GetSettingBool("MCM_DebugMode", false) then
-        DebugPrint(string.format("[Spawn] Placement mode=%s forceFindValid=%s", placementMode, tostring(forceFindValidPosition)))
+        DebugPrint(string.format(
+            "[Spawn] Placement mode=%s forceFindValid=%s supportHybrid=%s",
+            placementMode,
+            tostring(forceFindValidPosition),
+            tostring(autoHybridSupport)
+        ))
         if (placementMode ~= "FIND_VALID_ONLY") and Osi and Osi.CreateOutOfSightAtDirection then
             if createOutOfSightAvailable and (not rawAnchorX or not rawAnchorY or not rawAnchorZ) then
                 DebugPrint("[Spawn] CreateOutOfSightAtDirection using SafeGetPosition anchor (raw Osi.GetPosition unavailable).")
@@ -503,15 +516,17 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
         end
     end
 
-    -- Phase 1: Try CreateOutOfSightAtDirection first (out of sight in one call; fallback if API missing/fails).
-    if createOutOfSightAvailable and placementMode ~= "FIND_VALID_ONLY" then
+    local function EA_TryCreateOutOfSightPlacement(afterFindValid)
+        if not createOutOfSightAvailable or placementMode == "FIND_VALID_ONLY" then
+            return false
+        end
         if EA_GetSettingBool("MCM_DebugMode", false) then
             DebugPrint("[Spawn] Trying CreateOutOfSightAtDirection (6 attempts)")
         end
         for attempt = 1, 6 do
             local angleDeg = math.floor(EA_RandFloatCompat() * 360)
             local createDist = math.max(2, math.floor((tonumber(spawnDist) or 12) + (EA_RandFloatCompat() * 3)))
-            local ok, guid = pcall(Osi.CreateOutOfSightAtDirection, spawnTemplate, x, y, z, angleDeg, 1, 0, "")
+            local ok, guid = pcall(Osi.CreateOutOfSightAtDirection, spawnTemplate, x, y, z, angleDeg, createDist, 0, "")
             if ok and guid and guid ~= "" then
                 local ex, ey, ez = SafeGetPosition(guid)
                 if not ex then
@@ -525,7 +540,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                         enemy = guid
                         spawnX, spawnY, spawnZ = ex, ey, ez
                         if EA_GetSettingBool("MCM_DebugMode", false) then
-                            DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection succeeded (attempt %d): %s", attempt, tostring(guid)))
+                            DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection succeeded (attempt %d, dist=%d): %s", attempt, createDist, tostring(guid)))
                         end
                         if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayer") end
                         break
@@ -534,7 +549,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                         spawnX, spawnY, spawnZ = ex, ey, ez
                         UpdateMetric("createOutOfSightZeroDistanceAccepted")
                         if EA_GetSettingBool("MCM_DebugMode", false) then
-                            DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection accepted deferred zero-distance probe (attempt %d): %s", attempt, tostring(guid)))
+                            DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection accepted deferred zero-distance probe (attempt %d, dist=%d): %s", attempt, createDist, tostring(guid)))
                         end
                         if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayer") end
                         break
@@ -555,7 +570,6 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                             end
                             if placementMode == "AUTO"
                                 and (createOutOfSightZeroDistanceRejects >= 2 or createOutOfSightTooCloseRejects >= 3) then
-                                autoShortCircuitedToFindValid = true
                                 UpdateMetric("createOutOfSightAutoShortCircuit")
                                 if EA_GetSettingBool("MCM_DebugMode", false) then
                                     DebugPrint("[Spawn] AUTO short-circuit: repeated CreateOutOfSight too-close rejects, switching to FindValidPosition for this spawn.")
@@ -579,80 +593,102 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
         if not enemy and EA_GetSettingBool("MCM_DebugMode", false) then
             if placementMode == "CREATE_OOS_ONLY" then
                 DebugPrint("[Spawn] CreateOutOfSightAtDirection exhausted under CREATE_OOS_ONLY.")
+            elseif afterFindValid then
+                DebugPrint("[Spawn] CreateOutOfSightAtDirection failed after AUTO support hybrid FindValid path.")
             else
                 DebugPrint("[Spawn] CreateOutOfSightAtDirection all attempts failed, falling back to FindValidPosition")
             end
         end
+        return enemy ~= nil
     end
 
-    if not enemy and placementMode ~= "CREATE_OOS_ONLY" then
-    for i = 1, attempts do
-        local angle = EA_RandFloatCompat() * math.pi * 2
-        local distJitterMax = forceFindValidPosition and 1.2 or 3
-        local dist = spawnDist + EA_RandFloatCompat() * distJitterMax
-
-        local rawX = x + math.cos(angle) * dist
-        local rawZ = z + math.sin(angle) * dist
-
-        local validX, validY, validZ, posOk = EA_FindValidPositionCompat(rawX, y, rawZ, 2, player)
-
-        if (not posOk) or (not validX) or validX == 0 then
-            UpdateMetric("findValidPosFailed")
+    local function EA_TryFindValidPlacement()
+        if placementMode == "CREATE_OOS_ONLY" then
+            return false
         end
+        for i = 1, attempts do
+            local angle = EA_RandFloatCompat() * math.pi * 2
+            local distJitterMax = forceFindValidPosition and 1.2 or 3
+            local dist = spawnDist + EA_RandFloatCompat() * distJitterMax
 
-        local heightDelta = math.abs((tonumber(validY) or tonumber(y) or 0) - (tonumber(y) or 0))
-        local badHeight = heightDelta > EA_MAX_SPAWN_HEIGHT_DELTA
-        local tooClose, closeDist = EA_IsTooCloseToPlayer(validX, validZ)
-        if badHeight then
-            if EA_GetSettingBool("MCM_DebugMode", false) then
-                DebugPrint("Rejected spawn candidate (height delta):", string.format("%.2f", heightDelta))
+            local rawX = x + math.cos(angle) * dist
+            local rawZ = z + math.sin(angle) * dist
+
+            local validX, validY, validZ, posOk = EA_FindValidPositionCompat(rawX, y, rawZ, 2, player)
+
+            if (not posOk) or (not validX) or validX == 0 then
+                UpdateMetric("findValidPosFailed")
             end
-        end
-        if tooClose and EA_GetSettingBool("MCM_DebugMode", false) then
-            DebugPrint("Rejected spawn candidate (too close):", string.format("%.2f", closeDist), "<", string.format("%.2f", minSpawnDistance))
-        end
 
-        if validX and validX ~= 0 and (not badHeight) and (not tooClose) then
-            -- Create enemy (SYNC retries) at this candidate position
-            local created = nil
-            local tries = math.max(1, tonumber(EA_GetSpawnRetryCount and EA_GetSpawnRetryCount() or 1) or 1)
+            local heightDelta = math.abs((tonumber(validY) or tonumber(y) or 0) - (tonumber(y) or 0))
+            local badHeight = heightDelta > EA_MAX_SPAWN_HEIGHT_DELTA
+            local tooClose, closeDist = EA_IsTooCloseToPlayer(validX, validZ)
+            if badHeight then
+                if EA_GetSettingBool("MCM_DebugMode", false) then
+                    DebugPrint("Rejected spawn candidate (height delta):", string.format("%.2f", heightDelta))
+                end
+            end
+            if tooClose and EA_GetSettingBool("MCM_DebugMode", false) then
+                DebugPrint("Rejected spawn candidate (too close):", string.format("%.2f", closeDist), "<", string.format("%.2f", minSpawnDistance))
+            end
 
-            for attempt = 1, tries do
-                UpdateMetric("createAtAttempts")
-                local ok, guid = pcall(Osi.CreateAt, spawnTemplate, validX, validY, validZ, 1, 1, "")
-                if ok and guid and guid ~= "" then
-                    created = guid
-                    if Osi.ObjectExists and Osi.ObjectExists(guid) ~= 1 and EA_IsRobust() then
-                        EA_LogEvent("SPAWN", "CreateAt returned id before ObjectExists==1 (continuing) id=" .. tostring(guid))
+            if validX and validX ~= 0 and (not badHeight) and (not tooClose) then
+                -- Create enemy (SYNC retries) at this candidate position
+                local created = nil
+                local tries = math.max(1, tonumber(EA_GetSpawnRetryCount and EA_GetSpawnRetryCount() or 1) or 1)
+
+                for attempt = 1, tries do
+                    UpdateMetric("createAtAttempts")
+                    local ok, guid = pcall(Osi.CreateAt, spawnTemplate, validX, validY, validZ, 1, 1, "")
+                    if ok and guid and guid ~= "" then
+                        created = guid
+                        if Osi.ObjectExists and Osi.ObjectExists(guid) ~= 1 and EA_IsRobust() then
+                            EA_LogEvent("SPAWN", "CreateAt returned id before ObjectExists==1 (continuing) id=" .. tostring(guid))
+                        end
+                        break
+                    else
+                        UpdateMetric("createAtFailed")
+                        if EA_IsRobust() then
+                            EA_LogEvent("SPAWN", "CreateAt failed (retry) template=" .. tostring(spawnTemplate))
+                        end
                     end
-                    break
-                else
-                    UpdateMetric("createAtFailed")
-                    if EA_IsRobust() then
-                        EA_LogEvent("SPAWN", "CreateAt failed (retry) template=" .. tostring(spawnTemplate))
+                end
+
+                if created and created ~= "" then
+                    local enforce = (category == "ELITE" or category == "LEGENDARY")
+                        or (category == "VETERAN" and EA_RandFloatCompat() < 0.5)
+
+                    if enforce and HasLineOfSight and HasLineOfSight(player, created) then
+                        UpdateMetric("losRejected")
+                        if EA_IsRobust() then
+                            EA_LogEvent("SPAWN", "Rejected LoS spawn tier=" .. tostring(category) .. " id=" .. tostring(created))
+                        end
+                        SafeOsiExec(Osi.RequestDelete, created)
+                    else
+                        enemy = created
+                        spawnX, spawnY, spawnZ = validX, validY, validZ
+                        if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayer") end
+                        break
                     end
                 end
             end
-
-            if created and created ~= "" then
-                local enforce = (category == "ELITE" or category == "LEGENDARY")
-                    or (category == "VETERAN" and EA_RandFloatCompat() < 0.5)
-
-                if enforce and HasLineOfSight and HasLineOfSight(player, created) then
-                    UpdateMetric("losRejected")
-                    if EA_IsRobust() then
-                        EA_LogEvent("SPAWN", "Rejected LoS spawn tier=" .. tostring(category) .. " id=" .. tostring(created))
-                    end
-                    SafeOsiExec(Osi.RequestDelete, created)
-                else
-                    enemy = created
-                    spawnX, spawnY, spawnZ = validX, validY, validZ
-                    if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayer") end
-                    break
-                end
-            end
         end
+        return enemy ~= nil
     end
+
+    if autoHybridSupport then
+        if EA_GetSettingBool("MCM_DebugMode", false) then
+            DebugPrint("[Spawn] AUTO support hybrid: trying FindValidPosition before CreateOutOfSightAtDirection.")
+        end
+        EA_TryFindValidPlacement()
+        if not enemy then
+            EA_TryCreateOutOfSightPlacement(true)
+        end
+    else
+        EA_TryCreateOutOfSightPlacement(false)
+        if not enemy then
+            EA_TryFindValidPlacement()
+        end
     end
 
     local allowFinalFindValidFallback = true
@@ -1321,6 +1357,7 @@ local function EA_SpawnHostileNearPlayer_PostConfigure(ctx)
             joinDeferred = (deferJoinUntilAnchor and true or nil),
             preCombatGraceMs = preCombatGraceMs,
             disableAggressiveAdvance = (disableAggressiveAdvance and true or nil),
+            forceCombatJoin = (type(ambushRoll) == "table" and ambushRoll.forceCombatJoin == true) or nil,
             noEscape = (noEscape and true or nil),
             noReputation = (type(ambushRoll) == "table" and ambushRoll.noReputation == true) or nil,
             combatStartBarks = combatStartBarks,

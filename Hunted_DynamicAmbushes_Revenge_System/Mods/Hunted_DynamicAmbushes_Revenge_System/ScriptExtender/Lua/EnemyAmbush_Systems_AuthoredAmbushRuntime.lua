@@ -74,8 +74,12 @@ end
 local function EA_Notify(player, text)
     local debugEnabled = false
     if type(EA_GetSettingFromSnapshot) == "function" then
+        local okLogging, logging = pcall(EA_GetSettingFromSnapshot, "MCM_EnableDebugLogging", false)
+        if okLogging and logging == true then
+            debugEnabled = true
+        end
         local ok, out = pcall(EA_GetSettingFromSnapshot, "MCM_DebugMode", false)
-        debugEnabled = ok and out == true
+        debugEnabled = debugEnabled or (ok and out == true)
     end
     if debugEnabled and text and text ~= "" then
         DebugPrint("Scenario notify suppressed:", tostring(text))
@@ -421,8 +425,12 @@ local function EA_ScheduleScenarioPostCombatPrompt(character, scenario, spawnedE
         if checks >= maxChecks then
             local debugEnabled = false
             if type(EA_GetSettingFromSnapshot) == "function" then
+                local okLogging, logging = pcall(EA_GetSettingFromSnapshot, "MCM_EnableDebugLogging", false)
+                if okLogging and logging == true then
+                    debugEnabled = true
+                end
                 local ok, out = pcall(EA_GetSettingFromSnapshot, "MCM_DebugMode", false)
-                debugEnabled = ok and out == true
+                debugEnabled = debugEnabled or (ok and out == true)
             end
             if debugEnabled and requiresCombat and (not sawCombat) then
                 DebugPrint("Scenario post-combat prompt skipped (no combat observed):", tostring(scenario.id or "unknown"))

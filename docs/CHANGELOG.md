@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - Needle Blight Hotfix
+
+- Removed `Needle Blight` from the normal Plant ambush pool after runtime feedback showed its `Needle Blast` burst could one-turn level 6 parties.
+- Preserved Plant champion selection; this template was not promoted to champion because champion scaling would amplify the same burst-risk corridor.
+- Bumped packaged metadata and runtime version to `1.0.1`.
+
 ## 1.0.0 - Initial Nexus Release
 
 - Added dynamic exploration and rest ambushes with region and safety gating.

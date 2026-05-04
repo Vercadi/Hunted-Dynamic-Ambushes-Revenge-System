@@ -2,7 +2,7 @@
 
 Hunted adds systemic retaliation gameplay to Baldur's Gate 3. Hostile territory becomes more dangerous over time, repeated creature-type kills build revenge pressure, and enemies can retaliate through exploration, rest, and champion ambushes.
 
-Current release: `1.0.0`
+Current release: `1.0.2`
 
 ## Requirements
 

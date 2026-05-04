@@ -629,7 +629,7 @@
                                                                "Name":  "Disable Generated Ambush Loot",
                                                                "Type":  "checkbox",
                                                                "Default":  false,
-                                                               "Description":  "If enabled, ambush corpses stay interactable but generated ambush loot is cleared while normal corpse interaction and equipped gear remain. Preset baseline: Wayfarer/Marked/Relentless OFF, Hunted ON.",
+                                                               "Description":  "If enabled, generated ambush loot is cleared while corpses should remain interactable. This is an optional economy-cleanup mode; all presets allow ambush loot by default.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {
@@ -649,7 +649,7 @@
                                                                "Name":  "Allow Champion Loot",
                                                                "Type":  "checkbox",
                                                                "Default":  true,
-                                                               "Description":  "If enabled, champions can keep loot even when generated ambush loot is disabled. Preset baseline: Wayfarer/Marked/Relentless ON, Hunted OFF.",
+                                                               "Description":  "If enabled, champions can keep loot even when generated ambush loot is disabled. This only matters when Disable Generated Ambush Loot is enabled.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {

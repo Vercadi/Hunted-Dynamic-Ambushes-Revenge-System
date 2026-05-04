@@ -3957,6 +3957,7 @@ local arrivalCuePolicyRaw = tostring(getSetting("MCM_ArrivalCuePolicy", "BALANCE
 local arrivalCuePolicyEffective = callString(getArrivalCuePolicyFn, arrivalCuePolicyRaw)
 local arrivalCuePolicyRawLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyRaw, arrivalCuePolicyRaw)
 local arrivalCuePolicyEffectiveLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyEffective, arrivalCuePolicyEffective)
+local arrivalCueChanceScaleRaw = math.floor(math.max(0, math.min(200, tonumber(getSetting("MCM_ArrivalCueChanceScale", 100)) or 100)))
 local spawnPlacementModeRaw = tostring(getSetting("MCM_SpawnPlacementMode", "AUTO"))
 local spawnPlacementModeEffective = callString(getSpawnPlacementModeFn, spawnPlacementModeRaw)
 local spawnPlacementModeRawLabel = callLabel(getSpawnPlacementModeLabelFn, spawnPlacementModeRaw, spawnPlacementModeRaw)

@@ -405,9 +405,9 @@
 	<content contentuid="h59fdb657g9a67gd7e8g26a4gcb7696b5bd00" version="1">Ambush XP (%)</content>
 	<content contentuid="hf88d70d3gdf7bgb535g0205gfe5553f3d155" version="1">Ambush XP as a percent of normal enemy XP. Advanced Mode only; when Advanced Mode is OFF, Preset values are authoritative.</content>
 	<content contentuid="h3a575e27gb386g5efag675fg8b98432419e1" version="1">Disable Generated Ambush Loot</content>
-	<content contentuid="h2481abc4g831eg7e42g3b09gcd10adad0485" version="1">If enabled, ambush corpses stay interactable but generated ambush loot is cleared while normal corpse interaction and equipped gear remain. Preset baseline: Wayfarer/Marked/Relentless OFF, Hunted ON.</content>
+  <content contentuid="h2481abc4g831eg7e42g3b09gcd10adad0485" version="1">If enabled, generated ambush loot is cleared while corpses should remain interactable. This is an optional economy-cleanup mode; all presets allow ambush loot by default.</content>
 	<content contentuid="he640a700g6679g7d25gebdegead956479b49" version="1">Allow Champion Loot</content>
-	<content contentuid="hd4e5ee9cg328fg93d6gf255gf29544d09a52" version="1">If enabled, champions can keep loot even when generated ambush loot is disabled. Preset baseline: Wayfarer/Marked/Relentless ON, Hunted OFF.</content>
+  <content contentuid="hd4e5ee9cg328fg93d6gf255gf29544d09a52" version="1">If enabled, champions can keep loot even when generated ambush loot is disabled. This only matters when Disable Generated Ambush Loot is enabled.</content>
   <content contentuid="ha3c05db8gb55bgcba3g8f43gde0cc72bea9b" version="1">Diagnostics</content>
   <content contentuid="hfb7f12fbg828fg7899g399fg11e6056ef046" version="1">Diagnostics</content>
   <content contentuid="h03c1120fgd771g2776g3ffbg3bf3e81fa893" version="1">Debug Logging</content>

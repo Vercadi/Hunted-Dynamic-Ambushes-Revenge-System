@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 - Stability and Loot Defaults
+
+- Fixed `!ea_test settings` crashing when an old save does not have the removed arrival-cue chance-scale setting.
+- Changed all presets, including Hunted, to allow generated ambush loot and champion loot by default.
+- Moved `Steel Watcher Titan` to Construct champion-only and removed Titan-form Steel Watcher rows from random Legendary ambushes.
+- Moved `Adamantine Golem` into the normal Legendary Construct pool.
+- Bumped packaged metadata and runtime version to `1.0.2`.
+
 ## 1.0.1 - Needle Blight Hotfix
 
 - Removed `Needle Blight` from the normal Plant ambush pool after runtime feedback showed its `Needle Blast` burst could one-turn level 6 parties.

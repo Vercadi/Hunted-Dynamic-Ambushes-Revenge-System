@@ -22,7 +22,7 @@ local function EA_P0Set(...)
 end
 
 -- ========= VERSION CHECKING =========
-local MOD_VERSION = "1.0.1"
+local MOD_VERSION = "1.0.2"
 
 function EA_ParseVersionTuple(versionString)
     local a, b, c = tostring(versionString or "0.0.0"):match("^(%d+)%.(%d+)%.(%d+)$")

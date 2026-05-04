@@ -16,7 +16,7 @@ Champions.List = {
     {template = "4d62cd88-0fea-4ab4-a679-5290cdd5824d", name = "Bhaal Cultist Invoker Champion", creatureType = "Humanoid", level = 9, weight = 0.55, minPartyLevel = 10, maxPartyLevel = 18, status = "", championOnly = true, retinueFamily = "bhaal cultist"},
     {template = "319efbbe-f9f3-4584-804e-3e17d47d1136", name = "Spectator", creatureType = "Aberration", level = 8, weight = 0.35, minPartyLevel = 7, status = "", championOnly = true},
     {template = "47a6ceac-0788-4a51-a96e-3eabf7c11768", name = "Alioramus Alpha", creatureType = "Beast", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
-    {template = "4d5fbc43-408c-4ec8-acf6-9c8d8aa456d6", name = "Adamantine Golem", creatureType = "Construct", level = 10, weight = 1, minPartyLevel = 9, status = "", championOnly = true},
+    {template = "26fa3fe9-608c-4113-99a6-727781351ea4", name = "Steel Watcher Titan", creatureType = "Construct", level = 12, weight = 1, minPartyLevel = 12, status = "", championOnly = true},
     {template = "88a6c664-877c-4d6e-81ad-dd377df2634e", name = "Fire Elemental Prime", creatureType = "Elemental", level = 9, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
     {template = "c6ad9c71-43a9-410b-8e3e-219a0a7fddc8", name = "Planar Ally (Djinni)", creatureType = "Elemental", level = 6, weight = 0.1, minPartyLevel = 4, maxPartyLevel = 8, status = "", championOnly = true},
     {template = "d4edf374-6efe-463f-8899-889db26dee4e", name = "Green Hag Matriarch", creatureType = "Fey", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},

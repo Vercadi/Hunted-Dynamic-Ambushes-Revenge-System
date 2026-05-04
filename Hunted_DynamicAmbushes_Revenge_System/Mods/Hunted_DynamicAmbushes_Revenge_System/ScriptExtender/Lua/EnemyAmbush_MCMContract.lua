@@ -482,8 +482,8 @@ contract.PRESETS = {
         escapeMaxPerCombat = 1,
         vengefulMult = 1.10,
         xpPct = 10,
-        disableLoot = true,
-        allowChampionLoot = false,
+        disableLoot = false,
+        allowChampionLoot = true,
     },
 }
 

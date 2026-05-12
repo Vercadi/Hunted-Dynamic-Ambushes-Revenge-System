@@ -466,7 +466,16 @@
                                                                "Handles":  {
                                                                                "NameHandle":  "h73daffe6gada5gfd22g4d0fg785685bec327",
                                                                                "DescriptionHandle":  "h2f663676ge62dg7464gf86ege32952964b4c"
-                                                                           }
+                                                                           },
+                                                               "VisibleIf":  {
+                                                                                 "Conditions":  [
+                                                                                                    {
+                                                                                                        "SettingId":  "MCM_AdvancedMode",
+                                                                                                        "Operator":  "==",
+                                                                                                        "ExpectedValue":  true
+                                                                                                    }
+                                                                                                ]
+                                                                             }
                                                            },
                                                            {
                                                                "Id":  "MCM_ArrivalCuePolicy",
@@ -504,7 +513,7 @@
                                                                "Id":  "MCM_SpawnPlacementMode",
                                                                "Name":  "Spawn Placement Mode",
                                                                "Type":  "radio",
-                                                               "Default":  "Auto",
+                                                               "Default":  "Create OOS Only",
                                                                "Options":  {
                                                                                "Choices":  [
                                                                                                "Auto",
@@ -512,7 +521,7 @@
                                                                                                "Create OOS Only"
                                                                                            ]
                                                                            },
-                                                               "Description":  "Controls how ambushers pick spawn locations. Auto uses out-of-sight placement for the anchor and spread placement for support spawns when possible. Find Valid Only skips CreateOutOfSight. Create OOS Only only uses CreateOutOfSight.",
+                                                               "Description":  "Controls how ambushers pick spawn locations. Create OOS Only is the default and only uses CreateOutOfSight. Auto uses out-of-sight placement for the anchor and spread placement for support spawns when possible. Find Valid Only skips CreateOutOfSight.",
                                                                "VisibleIf":  {
                                                                                  "Conditions":  [
                                                                                                     {

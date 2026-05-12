@@ -19,7 +19,6 @@ Champions.List = {
     {template = "26fa3fe9-608c-4113-99a6-727781351ea4", name = "Steel Watcher Titan", creatureType = "Construct", level = 12, weight = 1, minPartyLevel = 12, status = "", championOnly = true},
     {template = "88a6c664-877c-4d6e-81ad-dd377df2634e", name = "Fire Elemental Prime", creatureType = "Elemental", level = 9, weight = 1, minPartyLevel = 8, status = "", championOnly = true},
     {template = "c6ad9c71-43a9-410b-8e3e-219a0a7fddc8", name = "Planar Ally (Djinni)", creatureType = "Elemental", level = 6, weight = 0.1, minPartyLevel = 4, maxPartyLevel = 8, status = "", championOnly = true},
-    {template = "d4edf374-6efe-463f-8899-889db26dee4e", name = "Green Hag Matriarch", creatureType = "Fey", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
     {template = "bc9fb0ff-18f1-4622-8260-d872e21a5b75", name = "Ogre Brute Champion", creatureType = "Giant", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
     {template = "4b3c6cdc-95da-476d-8ac7-c8d012ccf3b2", name = "Ochre Jelly Elder", creatureType = "Ooze", level = 9, weight = 1, minPartyLevel = 7, status = "", championOnly = true},
     {template = "ecfc157f-b689-47ac-8dcb-22fdb6861c01", name = "Shadow-Cursed Shambling Mound", creatureType = "Plant", level = 9, weight = 1, minPartyLevel = 9, status = "SCL_SHADOW_CURSE", championOnly = true},

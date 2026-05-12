@@ -31,6 +31,16 @@ function M.Build(deps)
     local EA_LogRestFlow = deps.EA_LogRestFlow or function() end
     local EA_TickTimeInDangerRisk = deps.EA_TickTimeInDangerRisk
     local EA_TryTriggerTravelDangerAmbush = deps.EA_TryTriggerTravelDangerAmbush
+    local EA_GetPostLoadAmbushGraceState = deps.EA_GetPostLoadAmbushGraceState or (EA and EA["EA_GetPostLoadAmbushGraceState"]) or function()
+        return { active = false }
+    end
+    local EA_GetPostCombatAmbushGraceState = deps.EA_GetPostCombatAmbushGraceState or (EA and EA["EA_GetPostCombatAmbushGraceState"]) or function()
+        return { active = false }
+    end
+    local EA_GetDialogueSafetyState = deps.EA_GetDialogueSafetyState or (EA and EA["EA_GetDialogueSafetyState"]) or function()
+        return { blocked = false }
+    end
+    local EA_DiagRecordRuntimeBlock = deps.EA_DiagRecordRuntimeBlock or (EA and EA["EA_DiagRecordRuntimeBlock"]) or function() return false end
     local LONG_REST_SAFETY_DELAY = tonumber(deps.LONG_REST_SAFETY_DELAY) or 30
     local EA_REHYDRATE_READY_RETRY_MAX = tonumber(deps.EA_REHYDRATE_READY_RETRY_MAX) or 30
     local EA_REHYDRATE_READY_RETRY_MS = tonumber(deps.EA_REHYDRATE_READY_RETRY_MS) or 1000
@@ -293,19 +303,54 @@ function M.Build(deps)
                 return false, "game_state_not_running"
             end
         end
+        local graceState = EA_GetPostLoadAmbushGraceState()
+        if type(graceState) == "table" and graceState.active == true then
+            pcall(EA_DiagRecordRuntimeBlock, "post_load_grace", {
+                stage = "runtime_ready",
+                character = tostring(character),
+                remainingMs = tonumber(graceState.remainingMs) or 0,
+                graceMs = tonumber(graceState.graceMs) or 0,
+                source = tostring(graceState.reason or ""),
+            })
+            return false, "post_load_grace"
+        end
+        local postCombatGraceState = EA_GetPostCombatAmbushGraceState(character)
+        if type(postCombatGraceState) == "table" and postCombatGraceState.active == true then
+            pcall(EA_DiagRecordRuntimeBlock, "post_combat_grace", {
+                stage = "runtime_ready",
+                character = tostring(character),
+                remainingMs = tonumber(postCombatGraceState.remainingMs) or 0,
+                graceMs = tonumber(postCombatGraceState.graceMs) or 0,
+                source = tostring(postCombatGraceState.reason or ""),
+            })
+            return false, "post_combat_grace"
+        end
         if Osi and Osi.ObjectExists and Osi.ObjectExists(character) ~= 1 then
             return false, "character_not_ready"
+        end
+        local dialogueState = EA_GetDialogueSafetyState(character)
+        if type(dialogueState) == "table" and dialogueState.blocked == true then
+            pcall(EA_DiagRecordRuntimeBlock, "dialog_or_cutscene", {
+                stage = "runtime_ready",
+                character = tostring(character),
+                actor = tostring(dialogueState.actor or ""),
+                source = tostring(dialogueState.source or ""),
+                checkedActors = tonumber(dialogueState.checkedActors) or 0,
+            })
+            return false, "dialog_or_cutscene"
         end
         return true, "ok"
     end
 
-    function Runtime.RequeueRuntimeReadyRetry(pending, timer, data, stage)
+    function Runtime.RequeueRuntimeReadyRetry(pending, timer, data, stage, reason)
         if type(pending) ~= "table" and type(pending) ~= "userdata" then
             return false
         end
         if type(data) ~= "table" and type(data) ~= "userdata" then
             return false
         end
+        data.lastRuntimeReadyReason = tostring(reason or data.lastRuntimeReadyReason or "runtime_not_ready")
+        data.lastRuntimeReadyAtMs = EA_NowMs()
         data.runtimeReadyRetries = (tonumber(data.runtimeReadyRetries) or 0) + 1
         if data.runtimeReadyRetries > EA_REHYDRATE_READY_RETRY_MAX then
             pending[timer] = nil

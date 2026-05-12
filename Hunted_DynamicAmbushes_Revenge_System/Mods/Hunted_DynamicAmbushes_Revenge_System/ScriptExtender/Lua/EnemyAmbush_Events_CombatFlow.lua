@@ -62,6 +62,8 @@ function M.Build(deps)
     local EA_ReadSettingBool = deps.EA_ReadSettingBool or (EA and EA["EA_ReadSettingBool"])
     local EA_ReadSettingNumber = deps.EA_ReadSettingNumber or (EA and EA["EA_ReadSettingNumber"])
     local EA_GetPreset = deps.EA_GetPreset or (EA and EA["EA_GetPreset"]) or function() return nil end
+    local EA_DiagRecordCleanup = deps.EA_DiagRecordCleanup or (EA and EA["EA_DiagRecordCleanup"]) or function() return false end
+    local EA_DiagRecordOutcome = deps.EA_DiagRecordOutcome or (EA and EA["EA_DiagRecordOutcome"]) or function() return false end
     local EA_NULL_GUID = "NULL_00000000-0000-0000-0000-000000000000"
     local EA_ARRIVAL_INVISIBILITY_STATUS = "EA_ARRIVAL_INVISIBLE"
     local EA_ESCAPE_INVISIBILITY_STATUS = "EA_ESCAPE_INVISIBLE"
@@ -79,10 +81,16 @@ function M.Build(deps)
     end
     EnemyData.DEFAULT_DESPAWN_VFX = EnemyData.DEFAULT_DESPAWN_VFX
         or "VFX_Spells_Cast_Intent_Utility_TargetJump_MistyStep_BodyFX_01"
+    local EA_PARTY_FLED_CLEANUP_DELAY_MS = 2500
+    local EA_PartyFledCleanupQueued = {}
+    local EA_LeftCombatAmbusherCandidates = {}
     local Runtime = {}
     local EA_PruneRuntimeCombatStateRef = nil
     local EA_EnsureCombatEscapeStateRef = function() return nil, nil end
     local EA_CleanupCombatEscapeStateIfIdleRef = function() return nil end
+    local EA_CleanupAbandonedCombatAmbushersRef = function() return 0 end
+    local EA_RunAbandonedCombatAmbusherCleanupRef = function() return 0 end
+    local EA_RememberLeftCombatAmbusherRef = function() return false end
     local EA_ResetSoftlockIdleCounterRef = function() return false end
     local EA_GetCombatKeyForTurnCharacterRef = function() return "" end
     local EA_FindCombatEscapeStateRef = function() return nil, nil end
@@ -304,6 +312,9 @@ function M.Build(deps)
             return nil
         end
         return spawned
+    end
+    local function EA_IsTableLike(value)
+        return type(value) == "table" or type(value) == "userdata"
     end
     local function EA_CountTrackedAmbushersInCombat(combatGuid)
         if not (Osi.DB_Is_InCombat and Osi.DB_Is_InCombat.Get) then
@@ -536,7 +547,7 @@ function M.Build(deps)
     end
     local function EA_GetEscapeAnchorObject(character, spawnedData)
         local anchor = nil
-        if type(spawnedData) == "table" and type(spawnedData.anchorPlayer) == "string" and spawnedData.anchorPlayer ~= "" then
+        if EA_IsTableLike(spawnedData) and type(spawnedData.anchorPlayer) == "string" and spawnedData.anchorPlayer ~= "" then
             anchor = spawnedData.anchorPlayer
         end
         if (not anchor or anchor == "") and character and character ~= "" and Osi.GetClosestAlivePlayer then
@@ -661,7 +672,7 @@ function M.Build(deps)
             return false
         end
         local spawnedData = spawned[id] or spawned[character]
-        if type(spawnedData) ~= "table" then
+        if not EA_IsTableLike(spawnedData) then
             return false
         end
         spawnedData._eaSoftlockIdleTurns = 0
@@ -700,6 +711,14 @@ function M.Build(deps)
             EA_Dirty()
         end
     end
+    local function EA_GetSoftlockDeleteTarget(turnCharacter, norm)
+        if type(norm) == "string" and norm ~= "" and norm ~= turnCharacter then
+            if not Osi.ObjectExists or Osi.ObjectExists(norm) == 1 then
+                return norm
+            end
+        end
+        return turnCharacter
+    end
     local function EA_ScheduleSoftlockDelete(turnCharacter, combatKey, spawnedData)
         if not turnCharacter or turnCharacter == "" then
             return false
@@ -708,10 +727,20 @@ function M.Build(deps)
             return false
         end
         local norm = EA_FastNormalizeUUID(turnCharacter) or EA_NormalizeUUID(turnCharacter) or turnCharacter
+        local deleteTarget = EA_GetSoftlockDeleteTarget(turnCharacter, norm)
         local trackedCount = EA_CountTrackedAmbushersInCombat(combatKey)
         local isLastTracked = trackedCount <= 1
         spawnedData._eaSoftlockDeletePending = true
         spawnedData._eaSoftlockDeleteQueuedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
+        pcall(EA_DiagRecordCleanup, turnCharacter, "combat_softlock_cleanup", {
+            ambushId = spawnedData.ambushId,
+            name = spawnedData.name,
+            creatureType = spawnedData.creatureType,
+            combatKey = combatKey,
+            idleTurns = tonumber(spawnedData._eaSoftlockIdleTurns) or 0,
+            isLastTracked = isLastTracked,
+            deleteTarget = (deleteTarget ~= turnCharacter) and deleteTarget or nil,
+        })
 
         PlayVFX_OnEntity(turnCharacter, EnemyData.DEFAULT_DESPAWN_VFX)
         EA_PlaySoundEvent(EA_DESPAWN_FADE_SOUND, turnCharacter)
@@ -725,12 +754,17 @@ function M.Build(deps)
                 "lastTracked=",
                 tostring(isLastTracked),
                 "idleTurns=",
-                tostring(tonumber(spawnedData._eaSoftlockIdleTurns) or 0)
+                tostring(tonumber(spawnedData._eaSoftlockIdleTurns) or 0),
+                "deleteTarget=",
+                tostring(deleteTarget)
             )
         end
 
         local function DeleteNow()
-            if Osi.ObjectExists and Osi.ObjectExists(turnCharacter) == 1 then
+            if Osi.ObjectExists and Osi.ObjectExists(deleteTarget) == 1 then
+                EA_FinalizeSoftlockDelete(turnCharacter, norm)
+                EA_DepartCharacterOutOfCombat(deleteTarget, spawnedData.anchorPlayer, EA_SOFTLOCK_DELETE_DELAY_MS)
+            elseif deleteTarget ~= turnCharacter and Osi.ObjectExists and Osi.ObjectExists(turnCharacter) == 1 then
                 EA_FinalizeSoftlockDelete(turnCharacter, norm)
                 EA_DepartCharacterOutOfCombat(turnCharacter, spawnedData.anchorPlayer, EA_SOFTLOCK_DELETE_DELAY_MS)
             else
@@ -742,14 +776,14 @@ function M.Build(deps)
             Ext.Timer.WaitFor(80, DeleteNow)
         else
             EA_FinalizeSoftlockDelete(turnCharacter, norm)
-            EA_DepartCharacterOutOfCombat(turnCharacter, spawnedData.anchorPlayer, EA_SOFTLOCK_DELETE_DELAY_MS)
+            EA_DepartCharacterOutOfCombat(deleteTarget, spawnedData.anchorPlayer, EA_SOFTLOCK_DELETE_DELAY_MS)
         end
         UpdateMetric("softlockDeleted")
         return true
     end
 
     local function EA_TrySoftlockDeleteOnTurn(turnCharacter, combatKey, spawnedData)
-        if type(spawnedData) ~= "table" then
+        if not EA_IsTableLike(spawnedData) then
             return false
         end
         if spawnedData._eaDefeatHandled == true or spawnedData.escapeScheduled == true or spawnedData._eaSoftlockDeletePending == true then
@@ -787,6 +821,259 @@ function M.Build(deps)
             chatterMap[stateKey] = nil
             EA_MarkRuntimeStateDirty(true)
         end
+    end
+    local function EA_CountAlivePlayersInCombat(combatGuid)
+        if not (Osi.DB_Is_InCombat and Osi.DB_Is_InCombat.Get and Osi.IsPlayer) then
+            return nil
+        end
+        local okRows, rows = pcall(function()
+            return Osi.DB_Is_InCombat:Get(nil, combatGuid)
+        end)
+        if not okRows or type(rows) ~= "table" then
+            return nil
+        end
+        local count = 0
+        for _, row in ipairs(rows) do
+            local member = row[1]
+            if member and member ~= "" and Osi.IsPlayer(member) == 1 then
+                if (not Osi.IsDead) or Osi.IsDead(member) ~= 1 then
+                    count = count + 1
+                end
+            end
+        end
+        return count
+    end
+    local function EA_IsSpawnedTrackedForCombat(enemy, spawnedData, combatKey)
+        local id = EA_FastNormalizeUUID(enemy) or EA_NormalizeUUID(enemy) or enemy
+        local byAmbusher = EnemyAmbush._CombatKeyByAmbusher
+        local known = nil
+        if type(byAmbusher) == "table" then
+            known = byAmbusher[id] or byAmbusher[enemy]
+        end
+        if not known and EA_IsTableLike(spawnedData) then
+            known = spawnedData._eaSoftlockCombatKey or spawnedData.escapePendingCombatKey or spawnedData._eaLastCombatKey
+        end
+        return type(known) == "string" and EA_NormalizeCombatKey(known) == combatKey
+    end
+    local function EA_ResolveTrackedSpawnObject(enemy)
+        local id = EA_FastNormalizeUUID(enemy) or EA_NormalizeUUID(enemy) or enemy
+        if id and id ~= "" and Osi.ObjectExists and Osi.ObjectExists(id) == 1 then
+            return id
+        end
+        if enemy and enemy ~= "" and enemy ~= id and Osi.ObjectExists and Osi.ObjectExists(enemy) == 1 then
+            return enemy
+        end
+        return id
+    end
+    local function EA_HasStatusSafe(character, statusId)
+        if not (character and character ~= "" and statusId and statusId ~= "" and Osi.HasActiveStatus) then
+            return false
+        end
+        local ok, hasStatus = pcall(Osi.HasActiveStatus, character, statusId)
+        return ok and tonumber(hasStatus) == 1
+    end
+    local function EA_IsHuntedAmbusherActor(character, spawnedData)
+        if EA_IsTableLike(spawnedData) then
+            return true
+        end
+        if not character or character == "" then
+            return false
+        end
+
+        local id = EA_FastNormalizeUUID(character) or EA_NormalizeUUID(character) or character
+        if EA_HasStatusSafe(character, "EA_AMBUSHER") or (id ~= character and EA_HasStatusSafe(id, "EA_AMBUSHER")) then
+            return true
+        end
+
+        if Osi.GetFaction then
+            local okFaction, faction = pcall(Osi.GetFaction, character)
+            if (not okFaction or not faction or tostring(faction) == "") and id ~= character then
+                okFaction, faction = pcall(Osi.GetFaction, id)
+            end
+            local factionText = okFaction and tostring(faction or "") or ""
+            if factionText:find("^EA_AMBUSHERS_") then
+                return true
+            end
+        end
+
+        return false
+    end
+    local function EA_AddCleanupCandidate(toCleanup, seenCleanup, enemy, spawnedData)
+        if not EA_IsHuntedAmbusherActor(enemy, spawnedData) then
+            return false
+        end
+        local id = EA_ResolveTrackedSpawnObject(enemy)
+        if not id or id == "" or seenCleanup[id] then
+            return false
+        end
+        if Osi.ObjectExists and Osi.ObjectExists(id) ~= 1 then
+            return false
+        end
+        if Osi.IsDead and Osi.IsDead(id) == 1 then
+            return false
+        end
+        seenCleanup[id] = true
+        toCleanup[#toCleanup + 1] = { enemy = id, data = EA_IsTableLike(spawnedData) and spawnedData or {} }
+        return true
+    end
+    local function EA_RememberLeftCombatAmbusher(character, combatGuid, spawnedData)
+        local combatKey = EA_NormalizeCombatKey(combatGuid)
+        if combatKey == "" or not EA_IsHuntedAmbusherActor(character, spawnedData) then
+            return false
+        end
+
+        local id = EA_FastNormalizeUUID(character) or EA_NormalizeUUID(character) or character
+        if not id or id == "" then
+            return false
+        end
+
+        local byCombat = EA_LeftCombatAmbusherCandidates[combatKey]
+        if type(byCombat) ~= "table" then
+            byCombat = {}
+            EA_LeftCombatAmbusherCandidates[combatKey] = byCombat
+        end
+        byCombat[id] = {
+            enemy = character,
+            data = EA_IsTableLike(spawnedData) and spawnedData or {},
+            rememberedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0,
+        }
+        return true
+    end
+    local function EA_AddCombatMemberCleanupCandidates(combatGuid, toCleanup, seenCleanup)
+        if not (Osi.DB_Is_InCombat and Osi.DB_Is_InCombat.Get) then
+            return 0
+        end
+        local okRows, rows = pcall(function()
+            return Osi.DB_Is_InCombat:Get(nil, combatGuid)
+        end)
+        if not okRows or type(rows) ~= "table" then
+            return 0
+        end
+
+        local spawned = EA_GetSpawnedRegistry()
+        local added = 0
+        for _, row in ipairs(rows) do
+            local member = row and row[1]
+            if member and member ~= "" and ((not Osi.IsPlayer) or Osi.IsPlayer(member) ~= 1) then
+                local id = EA_FastNormalizeUUID(member) or EA_NormalizeUUID(member) or member
+                local spawnedData = spawned and (spawned[id] or spawned[member]) or nil
+                if EA_AddCleanupCandidate(toCleanup, seenCleanup, member, spawnedData) then
+                    added = added + 1
+                end
+            end
+        end
+        return added
+    end
+    local function EA_AddRememberedLeftCombatCleanupCandidates(combatKey, toCleanup, seenCleanup)
+        local added = 0
+        if combatKey == "__all_tracked__" then
+            for key, byCombat in pairs(EA_LeftCombatAmbusherCandidates) do
+                if type(byCombat) == "table" then
+                    for id, entry in pairs(byCombat) do
+                        if type(entry) == "table"
+                            and EA_AddCleanupCandidate(toCleanup, seenCleanup, entry.enemy or id, entry.data) then
+                            added = added + 1
+                        end
+                    end
+                end
+                EA_LeftCombatAmbusherCandidates[key] = nil
+            end
+            return added
+        end
+
+        local byCombat = EA_LeftCombatAmbusherCandidates[combatKey]
+        if type(byCombat) ~= "table" then
+            return 0
+        end
+        for id, entry in pairs(byCombat) do
+            if type(entry) == "table"
+                and EA_AddCleanupCandidate(toCleanup, seenCleanup, entry.enemy or id, entry.data) then
+                added = added + 1
+            end
+        end
+        EA_LeftCombatAmbusherCandidates[combatKey] = nil
+        return added
+    end
+    local function EA_RunAbandonedCombatAmbusherCleanup(combatGuid, reason, force)
+        local allTracked = force == true and tostring(combatGuid or "") == "__all_tracked__"
+        local combatKey = allTracked and "__all_tracked__" or EA_NormalizeCombatKey(combatGuid)
+        if combatKey == "" then
+            return 0
+        end
+        if force ~= true and not allTracked then
+            local playerCount = EA_CountAlivePlayersInCombat(combatGuid)
+            if playerCount == nil or playerCount > 0 then
+                return 0
+            end
+        end
+        local spawned = EA_GetSpawnedRegistry()
+        local toCleanup = {}
+        local seenCleanup = {}
+        local registryCandidates = 0
+        if spawned then
+            for enemy, spawnedData in pairs(spawned) do
+                if EA_IsTableLike(spawnedData)
+                    and (allTracked or EA_IsSpawnedTrackedForCombat(enemy, spawnedData, combatKey)) then
+                    if EA_AddCleanupCandidate(toCleanup, seenCleanup, enemy, spawnedData) then
+                        registryCandidates = registryCandidates + 1
+                    end
+                end
+            end
+        end
+        local combatCandidates = 0
+        if not allTracked then
+            combatCandidates = EA_AddCombatMemberCleanupCandidates(combatGuid, toCleanup, seenCleanup)
+        elseif force == true then
+            combatCandidates = EA_AddCombatMemberCleanupCandidates(nil, toCleanup, seenCleanup)
+        end
+        local rememberedCandidates = EA_AddRememberedLeftCombatCleanupCandidates(combatKey, toCleanup, seenCleanup)
+        local removed = 0
+        local cleanupReason = (reason == "debug_cleanupabandoned" or reason == "debug_cleanupall")
+            and tostring(reason)
+            or "party_fled_cleanup"
+        for _, entry in ipairs(toCleanup) do
+            local id = entry.enemy
+            local spawnedData = entry.data
+            pcall(EA_DiagRecordCleanup, id, cleanupReason, spawnedData)
+            PlayVFX_OnEntity(id, spawnedData.despawnVFX or EnemyData.DEFAULT_DESPAWN_VFX)
+            EA_PlaySoundEvent(EA_DESPAWN_FADE_SOUND, id)
+            EA_FinalizeSoftlockDelete(id, id)
+            EA_DepartCharacterOutOfCombat(id, spawnedData.anchorPlayer, 250)
+            removed = removed + 1
+        end
+        if removed > 0 then
+            UpdateMetric("partyFledCleanupDeleted")
+            if EA_DebugEnabled() then
+                DebugPrint("[Cleanup] party-fled ambusher cleanup:", tostring(removed), "combat=", tostring(combatGuid), "reason=", tostring(reason or "unknown"))
+            end
+        elseif EA_DebugEnabled() and (reason == "debug_cleanupabandoned" or reason == "debug_cleanupall") then
+            DebugPrint(
+                "[Cleanup] debug cleanup found no candidates:",
+                "combat=", tostring(combatGuid),
+                "registryCandidates=", tostring(registryCandidates),
+                "combatCandidates=", tostring(combatCandidates),
+                "rememberedCandidates=", tostring(rememberedCandidates),
+                "allTracked=", tostring(allTracked)
+            )
+        end
+        return removed
+    end
+    EA_RunAbandonedCombatAmbusherCleanupRef = EA_RunAbandonedCombatAmbusherCleanup
+    local function EA_CleanupAbandonedCombatAmbushers(combatGuid, reason)
+        local combatKey = EA_NormalizeCombatKey(combatGuid)
+        if combatKey == "" or EA_PartyFledCleanupQueued[combatKey] == true then
+            return 0
+        end
+        EA_PartyFledCleanupQueued[combatKey] = true
+        local function RunCleanup()
+            EA_PartyFledCleanupQueued[combatKey] = nil
+            return EA_RunAbandonedCombatAmbusherCleanup(combatGuid, reason, false)
+        end
+        if Ext and Ext.Timer and Ext.Timer.WaitFor then
+            Ext.Timer.WaitFor(EA_PARTY_FLED_CLEANUP_DELAY_MS, RunCleanup)
+            return 0
+        end
+        return RunCleanup()
     end
 
     local function EA_PruneRuntimeCombatState(reason)
@@ -885,7 +1172,7 @@ function M.Build(deps)
         state.updatedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
         local spawned = EA_GetSpawnedRegistry()
         local spawnedData = spawned and (spawned[id] or spawned[turnCharacter]) or nil
-        if type(spawnedData) == "table" then
+        if EA_IsTableLike(spawnedData) then
             spawnedData.escapePending = nil
             spawnedData.escapePendingAt = nil
             spawnedData.escapePendingCombatKey = nil
@@ -940,7 +1227,7 @@ function M.Build(deps)
             EA_ClearHostileState(id)
         end
 
-        if type(spawnedData) == "table" then
+        if EA_IsTableLike(spawnedData) then
             spawnedData.escapePending = nil
             spawnedData.escapePendingAt = nil
             spawnedData.escapePendingCombatKey = nil
@@ -949,6 +1236,13 @@ function M.Build(deps)
         end
 
         state.escapedCount = (tonumber(state.escapedCount) or 0) + 1
+        pcall(EA_DiagRecordOutcome, EA_IsTableLike(spawnedData) and spawnedData.diagRecordId or nil, {
+            ambushId = EA_IsTableLike(spawnedData) and spawnedData.ambushId or nil,
+            escapedCountDelta = 1,
+            lastEscapedEnemy = turnCharacter,
+            lastEscapedName = EA_IsTableLike(spawnedData) and spawnedData.name or nil,
+            lastEscapedCreatureType = EA_IsTableLike(spawnedData) and spawnedData.creatureType or nil,
+        })
         state.nextAttemptTurnByEnemy = state.nextAttemptTurnByEnemy or {}
         state.nextAttemptTurnByEnemy[id] = nil
         state.updatedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
@@ -1037,7 +1331,7 @@ function M.Build(deps)
 
         local spawned = EA_GetSpawnedRegistry()
         local spawnedData = spawned and (spawned[id] or spawned[turnCharacter]) or nil
-        if type(spawnedData) ~= "table" then
+        if not EA_IsTableLike(spawnedData) then
             return false
         end
 
@@ -1093,7 +1387,7 @@ function M.Build(deps)
         end
         local id = EA_FastNormalizeUUID(turnCharacter) or EA_NormalizeUUID(turnCharacter) or turnCharacter
         local spawnedData = spawned[id] or spawned[turnCharacter]
-        if type(spawnedData) ~= "table" then
+        if not EA_IsTableLike(spawnedData) then
             EA_LogEscapeBlocked("not_spawned")
             return false
         end
@@ -1245,7 +1539,7 @@ function M.Build(deps)
         if EA_ApplyEscapeImminentStatus(turnCharacter, EA_ESCAPE_IMMINENT_DURATION) then
             state.pendingByEnemy[id] = pendingMeta
             state.updatedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
-            if type(spawnedData) == "table" then
+            if EA_IsTableLike(spawnedData) then
                 spawnedData.escapePending = true
                 spawnedData.escapePendingAt = state.updatedAt
                 spawnedData.escapePendingCombatKey = combatKey
@@ -1341,7 +1635,9 @@ function M.Build(deps)
 
     EA_EnsureCombatEscapeStateRef = EA_EnsureCombatEscapeState
     EA_CleanupCombatEscapeStateIfIdleRef = EA_CleanupCombatEscapeStateIfIdle
+    EA_CleanupAbandonedCombatAmbushersRef = EA_CleanupAbandonedCombatAmbushers
     EA_ResetSoftlockIdleCounterRef = EA_ResetSoftlockIdleCounter
+    EA_RememberLeftCombatAmbusherRef = EA_RememberLeftCombatAmbusher
     EA_GetCombatKeyForTurnCharacterRef = EA_GetCombatKeyForTurnCharacter
     EA_FindCombatEscapeStateRef = EA_FindCombatEscapeState
     EA_FindTurnChatterStateRef = EA_FindTurnChatterState
@@ -1864,6 +2160,18 @@ function M.Build(deps)
     end
     function Runtime.CleanupCombatEscapeStateIfIdle(combatGuid)
         return EA_CleanupCombatEscapeStateIfIdleRef(combatGuid)
+    end
+    function Runtime.CleanupAbandonedCombatAmbushers(combatGuid, reason)
+        return EA_CleanupAbandonedCombatAmbushersRef(combatGuid, reason)
+    end
+    function Runtime.DebugCleanupAbandonedCombatAmbushers(combatGuid, force)
+        return EA_RunAbandonedCombatAmbusherCleanupRef(combatGuid, "debug_cleanupabandoned", force == true)
+    end
+    function Runtime.DebugCleanupAllTrackedAmbushers()
+        return EA_RunAbandonedCombatAmbusherCleanupRef("__all_tracked__", "debug_cleanupall", true)
+    end
+    function Runtime.RememberLeftCombatAmbusher(character, combatGuid, spawnedData)
+        return EA_RememberLeftCombatAmbusherRef(character, combatGuid, spawnedData)
     end
     function Runtime.ResetSoftlockIdleCounter(character, reason, damageAmount)
         return EA_ResetSoftlockIdleCounterRef(character, reason, damageAmount)

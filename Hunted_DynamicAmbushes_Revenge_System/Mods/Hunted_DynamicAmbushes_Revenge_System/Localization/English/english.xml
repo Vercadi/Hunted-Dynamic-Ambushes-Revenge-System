@@ -386,7 +386,7 @@
 	<content contentuid="h15b78684g508dg5cd7g191fgd66a56f55d6e" version="1">Off</content>
 	<content contentuid="h9078d3cdg7adbg8382g7137gd4d55a54d943" version="1">Scales Balanced arrival-cue chance from 0% to 200%. Ignored when Arrival Cue Policy is Always On or Off.</content>
 	<content contentuid="h7b824684gc0f6g9c5bgf010g10c8dee32c15" version="1">Spawn Placement Mode</content>
-	<content contentuid="hd1169dfeg4082gc4f9g52d4ga3a88fe5228d" version="1">Controls how ambushers pick spawn locations. Auto uses out-of-sight placement for the anchor and spread placement for support spawns when possible. Find Valid Only skips CreateOutOfSight. Create OOS Only only uses CreateOutOfSight.</content>
+	<content contentuid="hd1169dfeg4082gc4f9g52d4ga3a88fe5228d" version="1">Controls how ambushers pick spawn locations. Create OOS Only is the default and only uses CreateOutOfSight. Auto uses out-of-sight placement for the anchor and spread placement for support spawns when possible. Find Valid Only skips CreateOutOfSight.</content>
 	<content contentuid="ha3350ba0g386ege905g2c2ag619b0ff0dadc" version="1">Auto</content>
 	<content contentuid="hcce34891g7fa3gebefgeea6ga42eb2355476" version="1">Find Valid Only</content>
 	<content contentuid="h73d3801dg981eg769dgd6bdgccf51398fdb0" version="1">Create OOS Only</content>

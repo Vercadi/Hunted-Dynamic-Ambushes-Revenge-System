@@ -35,6 +35,7 @@ function M.Build(deps)
     end
     local EA_GetSettingRaw = deps.EA_GetSettingRaw or function(_, fallback) return fallback end
     local GetPartySize = deps.GetPartySize or function() return 1 end
+    local EA_GetPartyProfile = deps.EA_GetPartyProfile or (EA and EA["EA_GetPartyProfile"]) or nil
     local EA_GetPoolActiveSummonList = deps.EA_GetPoolActiveSummonList or function() return {} end
     local GetAmbushThemeForEnemy = deps.GetAmbushThemeForEnemy
     local ValidateEnemyData = deps.ValidateEnemyData
@@ -46,6 +47,9 @@ function M.Build(deps)
     local EA_RandIntCompat = deps.EA_RandIntCompat
     local EA_PlayRegionAmbience = deps.EA_PlayRegionAmbience
     local EA_PlayPostSpawnBark = deps.EA_PlayPostSpawnBark
+    local EA_DiagBeginEncounter = deps.EA_DiagBeginEncounter or (EA and EA["EA_DiagBeginEncounter"]) or function() return nil end
+    local EA_DiagRecordEncounterFailure = deps.EA_DiagRecordEncounterFailure or (EA and EA["EA_DiagRecordEncounterFailure"]) or function() return false end
+    local EA_DiagFinalizeEncounter = deps.EA_DiagFinalizeEncounter or (EA and EA["EA_DiagFinalizeEncounter"]) or function() return false end
     local EA_SPAWN_STAGGER_MS_DEFAULT = tonumber(deps.EA_SPAWN_STAGGER_MS) or tonumber((EA and EA.CFG and EA.CFG.SPAWN_STAGGER_MS)) or 100
     local function EA_GetSpawnStaggerMsLive()
         return tonumber((EA and EA.CFG and EA.CFG.SPAWN_STAGGER_MS)) or EA_SPAWN_STAGGER_MS_DEFAULT
@@ -70,9 +74,9 @@ function M.Build(deps)
         return "BG3_12"
     end
     local function EA_GetSpawnPlacementModeKey()
-        local mode = tostring(EA_GetSpawnPlacementMode() or "AUTO"):upper()
+        local mode = tostring(EA_GetSpawnPlacementMode() or "CREATE_OOS_ONLY"):upper()
         if mode ~= "AUTO" and mode ~= "FIND_VALID_ONLY" and mode ~= "CREATE_OOS_ONLY" then
-            mode = "AUTO"
+            mode = "CREATE_OOS_ONLY"
         end
         return mode
     end
@@ -271,7 +275,7 @@ local function ExecuteAmbushSpawn(character, isLongRest, playerLevel, pointBudge
   local intensity = EA_GetEffectiveAmbushIntensity()
   if EA_IsCXMode and EA_IsCXMode() then
       -- CX already hardens enemies heavily; trim pack size slightly for better pacing.
-      intensity = intensity * 0.90
+      intensity = intensity * 0.80
   end
   local baseBudget = pointBudget or 0
   local adjustedBudget = math.floor(baseBudget * intensity + 0.5)
@@ -408,8 +412,19 @@ end
 
   local queueStepMode = (type(spawnOpts) == "table" and type(spawnOpts.queueState) == "table")
   local queueState = queueStepMode and spawnOpts.queueState or nil
-  local partySizeNow = tonumber(GetPartySize(character)) or 4
+  local partyProfile = nil
+  if type(EA_GetPartyProfile) == "function" then
+      local okProfile, outProfile = pcall(EA_GetPartyProfile, character)
+      if okProfile and type(outProfile) == "table" then
+          partyProfile = outProfile
+      end
+  end
+  local partySizeNow = tonumber((partyProfile and partyProfile.effectivePartySize) or GetPartySize(character)) or 4
   partySizeNow = math.max(1, math.min(12, math.floor(partySizeNow)))
+  local rawPartySizeNow = math.max(1, math.min(99, math.floor(tonumber(partyProfile and partyProfile.rawPartySize) or partySizeNow)))
+  local realPartyMembersNow = math.max(1, math.min(12, math.floor(tonumber(partyProfile and partyProfile.realPartyMembers) or partySizeNow)))
+  local nonPlayerPartyMembersNow = math.max(0, math.min(99, math.floor(tonumber(partyProfile and partyProfile.nonPlayerPartyMembers) or 0)))
+  local summonFollowerBonusNow = math.max(0, math.min(12, math.floor(tonumber(partyProfile and partyProfile.summonFollowerBonus) or 0)))
   local levelNow = tonumber(playerLevel) or 1
   levelNow = math.max(1, math.min(20, math.floor(levelNow)))
   local supportTier, supportTierDefault, supportTierFloorReason = EA_GetSupportBaseTier(topTier, presetHidden, levelNow, partySizeNow)
@@ -689,9 +704,23 @@ end
       cap, capByPartyForDebug, capTierShiftForDebug = EA_GetEntityCapForParty(configuredCap, level, size, topTier)
       targetCountPartyBonus = EA_GetTargetCountPartyBonus(level, size, topTier, presetHidden)
 
-      if level <= 2 and size <= 2 then
-          -- Early-game fairness hard clamp (locked v4 policy).
-          earlySmallPartySpawnCap = 2
+      if level <= 2 then
+          if size <= 2 then
+              earlySmallPartySpawnCap = 2
+          elseif size <= 4 then
+              earlySmallPartySpawnCap = 3
+          else
+              earlySmallPartySpawnCap = 4
+          end
+      elseif level <= 4 then
+          if size <= 2 then
+              earlySmallPartySpawnCap = 3
+          elseif size == 3 then
+              earlySmallPartySpawnCap = 4
+          end
+      end
+
+      if earlySmallPartySpawnCap then
           cap = math.min(cap, earlySmallPartySpawnCap)
       end
 
@@ -755,13 +784,69 @@ end
       DebugPrint("[Spawn] Using non-persistent stagger path (debug/runtime only).")
   end
 
+  local diagRecordId = queueStepMode and queueState.diagRecordId or nil
+  if not diagRecordId then
+      local flowLabel = nil
+      if type(spawnOpts) == "table" and type(spawnOpts.flowLabel) == "string" and spawnOpts.flowLabel ~= "" then
+          flowLabel = spawnOpts.flowLabel
+      elseif type(ambushRoll) == "table" and type(ambushRoll.flowLabel) == "string" and ambushRoll.flowLabel ~= "" then
+          flowLabel = ambushRoll.flowLabel
+      else
+          flowLabel = isLongRest and "LongRest" or "ShortRest"
+      end
+      diagRecordId = EA_DiagBeginEncounter({
+          ambushId = (type(ambushRoll) == "table" and ambushRoll.ambushId) or nil,
+          sourceFlow = flowLabel,
+          flowLabel = flowLabel,
+          character = character,
+          isLongRest = isLongRest == true,
+          region = spawnRegion,
+          rawRegion = spawnRaw,
+          partyLevel = playerLevel,
+          partySize = partySizeNow,
+          rawPartySize = rawPartySizeNow,
+          effectivePartySize = partySizeNow,
+          realPartyMembers = realPartyMembersNow,
+          nonPlayerPartyMembers = nonPlayerPartyMembersNow,
+          summonFollowerBonus = summonFollowerBonusNow,
+          requestedTier = topTier,
+          requestedTheme = ambushTheme,
+          placementMode = EA_GetSpawnPlacementModeKey(),
+          baseBudget = baseBudget,
+          adjustedBudget = adjustedBudget,
+          intensity = intensity,
+          balanceProfile = balanceProfile,
+          preset = tostring(EA_GetSettingRaw("MCM_DifficultyPreset", "")),
+          minEnemiesTarget = minEnemiesTarget,
+          entityCap = cap,
+          queueStep = queueStepMode == true,
+          lastRuntimeReadyReason = (type(spawnOpts) == "table" and spawnOpts.lastRuntimeReadyReason)
+              or (type(ambushRoll) == "table" and ambushRoll.lastRuntimeReadyReason)
+              or "",
+      })
+      if queueStepMode and type(queueState) == "table" then
+          queueState.diagRecordId = diagRecordId
+      end
+  end
+  if type(ambushRoll) == "table" then
+      ambushRoll.diagRecordId = diagRecordId
+  end
+
   if EA_GetSettingBool("MCM_DebugMode", false) then
       DebugPrint(string.format(
           "[Budget-Exec] party=%d tier=%s target=%d cap=%d adjustment=%d",
           partySizeNow, tostring(topTier), minEnemiesTarget, cap, targetAdjustment
       ))
       DebugPrint(string.format(
-          "[PartyPressure] level=%d party=%d tier=%s targetBonus=%d capBase=%d capParty=%d capShift=%d capFinal=%d",
+          "[PartyProfile] raw=%d effective=%d real=%d nonPlayer=%d summonBonus=%d",
+          tonumber(rawPartySizeNow) or 1,
+          tonumber(partySizeNow) or 1,
+          tonumber(realPartyMembersNow) or 1,
+          tonumber(nonPlayerPartyMembersNow) or 0,
+          tonumber(summonFollowerBonusNow) or 0
+      ))
+      DebugPrint(string.format(
+          "[PartyPressure] level=%d effectiveParty=%d tier=%s targetBonus=%d capBase=%d capParty=%d capShift=%d capFinal=%d",
           tonumber(playerLevel) or 1,
           tonumber(partySizeNow) or 1,
           tostring(topTier),
@@ -870,8 +955,8 @@ end
             EA_RecordSpawnTier(leaderTier)
             EA_RecordPowerClassSpawn(seedPowerClass)
             EA_RecordEarlyNonFodderSpawn(seedPowerClass)
-            if earlySmallPartySpawnCap and seedPowerClass == "FODDER" and enemyCost <= 1 then
-                -- Early duo fairness: avoid trivial 2-critter ambushes by allowing one extra fodder body.
+            if earlySmallPartySpawnCap and earlySmallPartySpawnCap >= 3 and seedPowerClass == "FODDER" and enemyCost <= 1 then
+                -- Early fairness: avoid trivial all-fodder ambushes when the active hard cap already allows 3+ bodies.
                 fodderSwarmCap = math.max(tonumber(fodderSwarmCap) or 0, 3)
                 cap = math.max(cap, fodderSwarmCap)
                 minEnemiesTarget = math.max(minEnemiesTarget, fodderSwarmCap)
@@ -892,7 +977,22 @@ end
           else
               DebugPrint("Anchor spawn failed; not spending budget")
               if EA_GetSpawnPlacementModeKey() == "CREATE_OOS_ONLY" then
-                  stopReason = "anchor_spawn_failed_create_oos_only"
+                  stopReason = "oos_spawn_failed"
+                  EA_DiagRecordEncounterFailure(diagRecordId, stopReason, {
+                      ambushId = type(ambushRoll) == "table" and ambushRoll.ambushId or nil,
+                      name = seedEnemy and seedEnemy.name or nil,
+                      template = seedEnemy and seedEnemy.template or nil,
+                  })
+                  EA_DiagFinalizeEncounter(diagRecordId, {
+                      totalSpawned = #spawnedEnemies,
+                      totalCost = spentPoints,
+                      adjustedBudget = adjustedBudget,
+                      remainingPoints = remainingPoints,
+                      attempts = attempts,
+                      spawnFailures = spawnFailures + 1,
+                      stopReason = stopReason,
+                      firstSpawnType = firstSpawnType,
+                  })
                   if EA_GetSettingBool("MCM_DebugMode", false) then
                       DebugPrint("[Spawn] CREATE_OOS_ONLY aborting ambush after anchor spawn failure.")
                   end
@@ -910,12 +1010,24 @@ end
 
   local function EA_RunOneSpawnAttempt()
       attempts = attempts + 1
+      if #spawnedEnemies >= minEnemiesTarget then
+          local intentionalSwarm = (tonumber(fodderSwarmCap) or 0) > 0
+          if partySizeNow <= 3 and not intentionalSwarm then
+              stopReason = "small_party_target_met"
+              return false
+          end
+      end
 
       local baseTierForSpawn = leaderSpawned and supportTier or topTier
       local roleForSpawn = leaderSpawned and "support" or "leader"
       local tierForSpawn, enemyData = EA_PickEnemyTemplateForRole(baseTierForSpawn, roleForSpawn)
       if not enemyData then
           stopReason = "no_valid_payload"
+          EA_DiagRecordEncounterFailure(diagRecordId, stopReason, {
+              ambushId = type(ambushRoll) == "table" and ambushRoll.ambushId or nil,
+              tier = baseTierForSpawn,
+              role = roleForSpawn,
+          })
           return false
       end
 
@@ -995,6 +1107,13 @@ end
               ))
           else
               spawnFailures = spawnFailures + 1
+              EA_DiagRecordEncounterFailure(diagRecordId, "spawn_failed", {
+                  ambushId = type(ambushRoll) == "table" and ambushRoll.ambushId or nil,
+                  name = enemyData.name,
+                  template = enemyData.template,
+                  tier = tierForSpawn,
+                  role = roleForSpawn,
+              })
               DebugPrint("Spawn failed; not spending budget")
           end
           return true
@@ -1073,6 +1192,19 @@ end
 
       print(string.format("[EnemyAmbush] Ambush complete: %d enemies spawned, %d/%d points used",
           totalSpawned, totalCost, adjustedBudget))
+      EA_DiagFinalizeEncounter(diagRecordId, {
+          ambushId = type(ambushRoll) == "table" and ambushRoll.ambushId or nil,
+          totalSpawned = totalSpawned,
+          totalCost = totalCost,
+          adjustedBudget = adjustedBudget,
+          remainingPoints = remainingPoints,
+          attempts = attempts,
+          spawnFailures = spawnFailures,
+          stopReason = stopReason,
+          firstSpawnType = firstSpawnType,
+          minEnemiesTarget = minEnemiesTarget,
+          entityCap = cap,
+      })
       return totalSpawned
   end
 
@@ -1099,6 +1231,7 @@ end
       queueState.powerCapRelaxSteps = powerCapRelaxSteps
       queueState.spawnTierCounts = spawnTierCounts
       queueState.fodderSwarmCap = tonumber(fodderSwarmCap) or 0
+      queueState.diagRecordId = diagRecordId
       queueState.staggerMs = staggerMs
       queueState.stopReason = stopReason
       queueState.done = (done == true)

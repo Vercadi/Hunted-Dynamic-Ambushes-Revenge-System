@@ -272,6 +272,7 @@ end
 local EA_TIME_IN_DANGER_FULL_RISK_MS = 25 * 60 * 1000
 local EA_TIME_IN_DANGER_MAX_DELTA_MS = 90000
 local EA_TIME_IN_DANGER_POST_AMBUSH_GATE_MS = 30 * 60 * 1000
+local EA_TIME_IN_DANGER_POST_COMBAT_GRACE_MS = 5 * 60 * 1000
 
 local function EA_GetTimeInDangerCharacterKey(character)
     local key = EA_NormalizeUUID(character) or tostring(character or "")
@@ -570,6 +571,193 @@ function EA_ResetTimeInDangerState(character, reason)
     return false
 end
 
+local function EA_GetPostCombatGraceMap()
+    EA._PostCombatAmbushGraceByCharacter = EA._PostCombatAmbushGraceByCharacter or {}
+    if type(EA._PostCombatAmbushGraceByCharacter) ~= "table" then
+        EA._PostCombatAmbushGraceByCharacter = {}
+    end
+    return EA._PostCombatAmbushGraceByCharacter
+end
+
+local function EA_GetPostCombatTracker()
+    EA._PostCombatGraceTracker = EA._PostCombatGraceTracker or {}
+    if type(EA._PostCombatGraceTracker) ~= "table" then
+        EA._PostCombatGraceTracker = {}
+    end
+    if type(EA._PostCombatGraceTracker.combats) ~= "table" then
+        EA._PostCombatGraceTracker.combats = {}
+    end
+    return EA._PostCombatGraceTracker.combats
+end
+
+local function EA_PostCombatNormalizeCombatKey(combatGuid)
+    local fn = EA and EA["EA_NormalizeCombatKey"]
+    if type(fn) == "function" then
+        local ok, out = pcall(fn, combatGuid)
+        if ok and out and out ~= "" then
+            return tostring(out)
+        end
+    end
+    return tostring(combatGuid or "")
+end
+
+function EA_GetPostCombatAmbushGraceState(character, nowMs)
+    local resolvedCharacter = EA_ResolveTimeInDangerCharacter(character)
+    local key = EA_GetTimeInDangerCharacterKey(resolvedCharacter)
+    if not key then
+        return { active = false }
+    end
+    local graceMap = EA_GetPostCombatGraceMap()
+    local entry = graceMap[key]
+    if type(entry) ~= "table" then
+        return { active = false }
+    end
+    local resolvedNow = math.max(0, tonumber(nowMs) or tonumber(EA_NowMs and EA_NowMs() or 0) or 0)
+    local endAtMs = tonumber(entry.endAtMs) or 0
+    if endAtMs <= resolvedNow then
+        graceMap[key] = nil
+        return { active = false }
+    end
+    return {
+        active = true,
+        character = tostring(resolvedCharacter or key),
+        remainingMs = math.max(0, math.floor(endAtMs - resolvedNow)),
+        graceMs = math.max(0, math.floor(tonumber(entry.graceMs) or EA_TIME_IN_DANGER_POST_COMBAT_GRACE_MS)),
+        startAtMs = math.max(0, math.floor(tonumber(entry.startAtMs) or 0)),
+        reason = tostring(entry.reason or "vanilla_combat_ended"),
+    }
+end
+
+function EA_StampPostCombatAmbushGrace(character, reason, durationMs)
+    local resolvedCharacter = EA_ResolveTimeInDangerCharacter(character)
+    local key = EA_GetTimeInDangerCharacterKey(resolvedCharacter)
+    if not key then
+        return false
+    end
+    local nowMs = math.max(0, tonumber(EA_NowMs and EA_NowMs() or 0) or 0)
+    local graceMs = math.max(0, math.floor(tonumber(durationMs) or EA_TIME_IN_DANGER_POST_COMBAT_GRACE_MS))
+    if graceMs <= 0 then
+        return false
+    end
+    EA_GetPostCombatGraceMap()[key] = {
+        startAtMs = nowMs,
+        endAtMs = nowMs + graceMs,
+        graceMs = graceMs,
+        reason = tostring(reason or "vanilla_combat_ended"),
+    }
+    if EA_StateTimeDebugEnabled() then
+        DebugPrint(string.format(
+            "[Risk] post-combat grace stamped char=%s reason=%s graceMs=%d",
+            tostring(resolvedCharacter or key),
+            tostring(reason or "vanilla_combat_ended"),
+            graceMs
+        ))
+    end
+    return true
+end
+
+local function EA_PostCombatIsPlayer(character)
+    if character and character ~= "" and Osi and Osi.IsPlayer then
+        local ok, isPlayer = pcall(Osi.IsPlayer, character)
+        return ok and tonumber(isPlayer) == 1
+    end
+    return false
+end
+
+local function EA_PostCombatIsHuntedAmbusher(character)
+    if not character or character == "" then
+        return false
+    end
+    local id = EA_NormalizeUUID(character) or character
+    local spawnedFn = EA_Spawned or (EA and EA["EA_Spawned"])
+    local spawned = (type(spawnedFn) == "function") and spawnedFn() or nil
+    if EA_StatePersistentMap(spawned) and (spawned[id] ~= nil or spawned[character] ~= nil) then
+        return true
+    end
+    if Osi and Osi.HasActiveStatus then
+        local ok, hasStatus = pcall(Osi.HasActiveStatus, character, "EA_AMBUSHER")
+        if ok and tonumber(hasStatus) == 1 then
+            return true
+        end
+    end
+    return false
+end
+
+local function EA_FinalizePostCombatGraceIfReady(combatKey, character, token)
+    local tracker = EA_GetPostCombatTracker()
+    local state = tracker[combatKey]
+    if type(state) ~= "table" or state.finalizeToken ~= token then
+        return false
+    end
+    for _ in pairs(state.activePlayers or {}) do
+        return false
+    end
+    tracker[combatKey] = nil
+    if state.partySeen == true and state.huntedSeen ~= true then
+        local target = EA_ResolveTimeInDangerCharacter(character) or character
+        EA_ResetTimeInDangerState(target, "vanilla_combat_ended")
+        EA_StampPostCombatAmbushGrace(target, "vanilla_combat_ended", EA_TIME_IN_DANGER_POST_COMBAT_GRACE_MS)
+        return true
+    end
+    return false
+end
+
+function EA_RecordCombatEnteredForPostCombatGrace(character, combatGuid)
+    local combatKey = EA_PostCombatNormalizeCombatKey(combatGuid)
+    if combatKey == "" then
+        return false
+    end
+    local tracker = EA_GetPostCombatTracker()
+    local state = tracker[combatKey]
+    if type(state) ~= "table" then
+        state = { partySeen = false, huntedSeen = false, activePlayers = {}, finalizeToken = 0 }
+        tracker[combatKey] = state
+    end
+    local characterKey = EA_GetTimeInDangerCharacterKey(character)
+    if EA_PostCombatIsPlayer(character) then
+        state.partySeen = true
+        if characterKey then
+            state.activePlayers[characterKey] = true
+        end
+    end
+    if EA_PostCombatIsHuntedAmbusher(character) then
+        state.huntedSeen = true
+    end
+    return true
+end
+
+function EA_RecordCombatLeftForPostCombatGrace(character, combatGuid)
+    local combatKey = EA_PostCombatNormalizeCombatKey(combatGuid)
+    if combatKey == "" then
+        return false
+    end
+    local tracker = EA_GetPostCombatTracker()
+    local state = tracker[combatKey]
+    if type(state) ~= "table" then
+        state = { partySeen = false, huntedSeen = false, activePlayers = {}, finalizeToken = 0 }
+        tracker[combatKey] = state
+    end
+    if EA_PostCombatIsPlayer(character) then
+        state.partySeen = true
+        local characterKey = EA_GetTimeInDangerCharacterKey(character)
+        if characterKey then
+            state.activePlayers[characterKey] = nil
+        end
+    end
+    if EA_PostCombatIsHuntedAmbusher(character) then
+        state.huntedSeen = true
+    end
+    state.finalizeToken = (tonumber(state.finalizeToken) or 0) + 1
+    local token = state.finalizeToken
+    if Ext and Ext.Timer and Ext.Timer.WaitFor then
+        Ext.Timer.WaitFor(2500, function()
+            EA_FinalizePostCombatGraceIfReady(combatKey, character, token)
+        end)
+        return true
+    end
+    return EA_FinalizePostCombatGraceIfReady(combatKey, character, token)
+end
+
 function EA_TickTimeInDangerRisk(opts)
     opts = (type(opts) == "table") and opts or {}
 
@@ -614,17 +802,33 @@ function EA_TickTimeInDangerRisk(opts)
     end
 
     local inCombat = EA_IsCharacterOrPartyInCombat(character)
-    local inBlockedSafeZone = EA_IsCharacterInBlockedSafeZone and EA_IsCharacterInBlockedSafeZone(character) == true or false
+    local safeZoneState = (type(EA_GetSafeZoneState) == "function") and EA_GetSafeZoneState(character) or nil
+    local inBlockedSafeZone = false
+    local safeZoneBlockReason = ""
+    if type(safeZoneState) == "table" then
+        inBlockedSafeZone = safeZoneState.blocked == true
+        safeZoneBlockReason = tostring(safeZoneState.blockReason or "")
+    elseif EA_IsCharacterInBlockedSafeZone then
+        inBlockedSafeZone = EA_IsCharacterInBlockedSafeZone(character) == true
+    end
+    if safeZoneBlockReason == "" and inBlockedSafeZone then
+        safeZoneBlockReason = "safe_zone_block"
+    end
+    local rawRegionBlocked = EA_IsRawRegionBlocked and EA_IsRawRegionBlocked(rawRegion) == true or false
     local regionBlocked = EA_IsRegionBlocked and EA_IsRegionBlocked(canonicalRegion) == true or false
     local regionIsCamp = EA_IsCharacterInCampNow(character, canonicalRegion)
     local postAmbushGateRemainingMs, postAmbushGateStartAtMs =
         EA_GetTimeInDangerPostAmbushGateRemainingMs(key, nowMs)
     local postAmbushGateActive = postAmbushGateRemainingMs > 0
+    local postCombatGraceState = EA_GetPostCombatAmbushGraceState(character, nowMs)
+    local postCombatGraceActive = type(postCombatGraceState) == "table" and postCombatGraceState.active == true
     local eligible = (inCombat ~= true)
         and (inBlockedSafeZone ~= true)
+        and (rawRegionBlocked ~= true)
         and (regionBlocked ~= true)
         and (regionIsCamp ~= true)
         and (postAmbushGateActive ~= true)
+        and (postCombatGraceActive ~= true)
 
     local accumulatedMs = tonumber(accumulatedMsByCharacter[key]) or 0
     local changed = false
@@ -645,7 +849,7 @@ function EA_TickTimeInDangerRisk(opts)
 
     if EA_StateTimeDebugEnabled() then
         DebugPrint(string.format(
-            "[Risk] time_in_danger source=%s char=%s region=%s raw=%s eligible=%s combat=%s blockedSafe=%s blockedRegion=%s camp=%s postAmbushGateMs=%d gateStartMs=%d deltaMs=%d accumMs=%d riskUnit=%.3f",
+            "[Risk] time_in_danger source=%s char=%s region=%s raw=%s eligible=%s combat=%s blockedSafe=%s rawBlocked=%s blockedRegion=%s camp=%s postAmbushGateMs=%d postCombatGraceMs=%d gateStartMs=%d deltaMs=%d accumMs=%d riskUnit=%.3f",
             tostring(opts.source or "unknown"),
             tostring(character),
             tostring(canonicalRegion),
@@ -653,9 +857,11 @@ function EA_TickTimeInDangerRisk(opts)
             tostring(eligible),
             tostring(inCombat),
             tostring(inBlockedSafeZone),
+            tostring(rawRegionBlocked),
             tostring(regionBlocked),
             tostring(regionIsCamp),
             math.floor(tonumber(postAmbushGateRemainingMs) or 0),
+            math.floor(tonumber(postCombatGraceState and postCombatGraceState.remainingMs) or 0),
             math.floor(tonumber(postAmbushGateStartAtMs) or 0),
             math.floor(tonumber(deltaMs) or 0),
             math.floor(tonumber(accumulatedMs) or 0),
@@ -666,6 +872,18 @@ function EA_TickTimeInDangerRisk(opts)
     local resultReason = eligible and "accumulating" or "blocked"
     if postAmbushGateActive then
         resultReason = "post_ambush_gate"
+    elseif postCombatGraceActive then
+        resultReason = "post_combat_grace"
+    elseif safeZoneBlockReason ~= "" then
+        resultReason = safeZoneBlockReason
+    elseif rawRegionBlocked then
+        resultReason = "raw_safe_zone_block"
+    elseif regionBlocked then
+        resultReason = "region_block"
+    elseif regionIsCamp then
+        resultReason = "camp"
+    elseif inCombat then
+        resultReason = "combat"
     end
     return true, accumulatedMs, resultReason
 end

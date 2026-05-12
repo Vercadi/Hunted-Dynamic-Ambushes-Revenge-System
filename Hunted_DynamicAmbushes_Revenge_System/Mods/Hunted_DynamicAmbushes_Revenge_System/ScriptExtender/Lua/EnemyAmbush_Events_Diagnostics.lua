@@ -49,6 +49,7 @@ function M.Build(deps)
     local EA_CanSpawnChampionForType = deps.EA_CanSpawnChampionForType or function() return true end
     local EA_GetGuaranteedChampionQueueSafeFn = deps.EA_GetGuaranteedChampionQueueSafeFn or (EA and EA["EA_GetGuaranteedChampionQueueSafe"])
     local EA_RememberDefeatedSpawned = deps.EA_RememberDefeatedSpawned or (EA and EA["EA_RememberDefeatedSpawned"]) or function() end
+    local EA_DiagRecordOutcome = deps.EA_DiagRecordOutcome or (EA and EA["EA_DiagRecordOutcome"]) or function() return false end
     local SaveReputation = deps.SaveReputation
     local EA_ClearHostileState = deps.EA_ClearHostileState or function() end
     local EA_OUT_OF_COMBAT_REP_WINDOW_MS = tonumber(deps.EA_OUT_OF_COMBAT_REP_WINDOW_MS) or 120000
@@ -158,6 +159,14 @@ function M.Build(deps)
         end
         DebugPrint("Defeat event fired for (spawned):", tostring(character), "kind=", defeatTag)
         EA_RememberDefeatedSpawned(character, spawnedData, defeatTag)
+        pcall(EA_DiagRecordOutcome, spawnedData.diagRecordId, {
+            ambushId = spawnedData.ambushId,
+            defeatedCountDelta = 1,
+            lastDefeatKind = defeatTag,
+            lastDefeatedEnemy = character,
+            lastDefeatedName = spawnedData.name,
+            lastDefeatedCreatureType = spawnedData.creatureType,
+        })
     
         local player = Osi.GetClosestAlivePlayer(character)
 

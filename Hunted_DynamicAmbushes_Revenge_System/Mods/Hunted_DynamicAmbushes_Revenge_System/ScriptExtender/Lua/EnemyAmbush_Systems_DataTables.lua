@@ -436,6 +436,10 @@ local DataTables = {
         ["2751f474-424e-4693-85dc-cb5bebbba259"] = true, -- Beholder Tyrant visual/name failure in generic champion flow
     },
 
+    CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE = {
+        Fey = true, -- Temporarily disabled until a non-story Fey champion candidate is runtime-audited.
+    },
+
     ENTRY_BAND_ORDER = {
         COMMON = 1,
         VETERAN = 2,

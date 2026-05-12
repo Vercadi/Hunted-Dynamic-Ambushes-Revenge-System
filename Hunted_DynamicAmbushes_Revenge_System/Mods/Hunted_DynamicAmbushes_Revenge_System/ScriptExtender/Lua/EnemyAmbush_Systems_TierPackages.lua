@@ -328,11 +328,11 @@ function M.Build(deps)
             local commonBoosts
             if cx then
                 if statusThreatLevel >= 11 then
-                    commonBoosts = "IncreaseMaxHP(42%);TemporaryHP(10)"
+                    commonBoosts = "IncreaseMaxHP(30%);TemporaryHP(7)"
                 elseif statusThreatLevel >= 7 then
-                    commonBoosts = "IncreaseMaxHP(30%);TemporaryHP(8)"
+                    commonBoosts = "IncreaseMaxHP(20%);TemporaryHP(5)"
                 else
-                    commonBoosts = "IncreaseMaxHP(18%);TemporaryHP(5)"
+                    commonBoosts = "IncreaseMaxHP(12%);TemporaryHP(3)"
                 end
             else
                 if statusThreatLevel >= 15 then

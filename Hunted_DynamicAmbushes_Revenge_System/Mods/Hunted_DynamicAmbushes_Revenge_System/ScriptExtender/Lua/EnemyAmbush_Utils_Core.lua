@@ -22,19 +22,21 @@ local function EA_P0Set(...)
 end
 
 -- ========= VERSION CHECKING =========
-local MOD_VERSION = "1.0.2"
+local MOD_VERSION = "1.0.5"
+local EA_POST_LOAD_AMBUSH_GRACE_MS = 8000
 
 function EA_ParseVersionTuple(versionString)
-    local a, b, c = tostring(versionString or "0.0.0"):match("^(%d+)%.(%d+)%.(%d+)$")
-    return tonumber(a) or 0, tonumber(b) or 0, tonumber(c) or 0
+    local a, b, c, d = tostring(versionString or "0.0.0"):match("^(%d+)%.(%d+)%.(%d+)%.?(%d*)$")
+    return tonumber(a) or 0, tonumber(b) or 0, tonumber(c) or 0, tonumber(d) or 0
 end
 
 function EA_IsVersionLess(lhs, rhs)
-    local la, lb, lc = EA_ParseVersionTuple(lhs)
-    local ra, rb, rc = EA_ParseVersionTuple(rhs)
+    local la, lb, lc, ld = EA_ParseVersionTuple(lhs)
+    local ra, rb, rc, rd = EA_ParseVersionTuple(rhs)
     if la ~= ra then return la < ra end
     if lb ~= rb then return lb < rb end
-    return lc < rc
+    if lc ~= rc then return lc < rc end
+    return ld < rd
 end
 
 local function EA_RunReputationMigrationReset()
@@ -684,6 +686,10 @@ Ext.Vars.RegisterModVariable(ModuleUUID, "EA_ModVersion", {
     Server = true, Client = false, WriteableOnServer = true, Persistent = true, SyncToClient = false
 })
 
+Ext.Vars.RegisterModVariable(ModuleUUID, "EA_PlacementOOSMigrationVersion", {
+    Server = true, Client = false, WriteableOnServer = true, Persistent = true, SyncToClient = false
+})
+
 Ext.Vars.RegisterModVariable(ModuleUUID, "EA_TutorialShown", {
     Server = true, Client = false, WriteableOnServer = true, Persistent = true, SyncToClient = false
 })
@@ -768,6 +774,7 @@ local EA_PERSISTENT_ROOT_FIELDS = {
     "AmbushPressureLastUpdate",
     "EA_TimeSourceVersion",
     "EA_ModVersion",
+    "EA_PlacementOOSMigrationVersion",
     "EA_TutorialShown",
     "GuaranteedChampionQueue",
     "GuaranteedChampionArmed",
@@ -1271,7 +1278,7 @@ function EA_EvictOldSpawned(spawned, cap)
     for uuid, data in pairs(spawned) do
         count = count + 1
         local last = 0
-        if type(data) == "table" then
+        if type(data) == "table" or type(data) == "userdata" then
             last = tonumber(data.lastSeen) or tonumber(data.tsCreated) or 0
         end
         entries[#entries+1] = { uuid = uuid, last = last }
@@ -1288,6 +1295,119 @@ end
 
 function EA_MarkSessionLoadedForCleanup(tsMs)
     EnemyAmbush._SpawnedCleanupSessionLoadedAtMs = tonumber(tsMs) or EA_NowMs() or 0
+end
+
+function EA_MarkPostLoadAmbushGrace(tsMs, reason)
+    local now = tonumber(tsMs) or EA_NowMs() or 0
+    if now < 0 then
+        now = 0
+    end
+
+    EnemyAmbush._PostLoadAmbushGraceStampedAtMs = now
+    EnemyAmbush._PostLoadAmbushGraceUntilMs = now + EA_POST_LOAD_AMBUSH_GRACE_MS
+    EnemyAmbush._PostLoadAmbushGraceReason = tostring(reason or "session_loaded")
+    return EnemyAmbush._PostLoadAmbushGraceUntilMs
+end
+
+function EA_GetPostLoadAmbushGraceState(nowMs)
+    local now = tonumber(nowMs) or EA_NowMs() or 0
+    local untilMs = tonumber(EnemyAmbush._PostLoadAmbushGraceUntilMs) or 0
+    local stampedAtMs = tonumber(EnemyAmbush._PostLoadAmbushGraceStampedAtMs) or 0
+    local remainingMs = 0
+    local active = false
+
+    if now > 0 and untilMs > now then
+        remainingMs = math.max(0, untilMs - now)
+        active = true
+    end
+
+    return {
+        active = active,
+        reason = tostring(EnemyAmbush._PostLoadAmbushGraceReason or "session_loaded"),
+        stampedAtMs = stampedAtMs,
+        untilMs = untilMs,
+        remainingMs = remainingMs,
+        graceMs = EA_POST_LOAD_AMBUSH_GRACE_MS,
+    }
+end
+
+function EA_IsPostLoadAmbushGraceActive(nowMs)
+    local state = EA_GetPostLoadAmbushGraceState(nowMs)
+    return state.active == true, state
+end
+
+function EA_GetDialogueSafetyState(character)
+    local actors = {}
+    local seen = {}
+
+    local function AddActor(actor)
+        if actor == nil then
+            return
+        end
+        local value = tostring(actor)
+        if value == "" or value == "nil" or seen[value] then
+            return
+        end
+        seen[value] = true
+        actors[#actors + 1] = value
+    end
+
+    AddActor(character)
+
+    local partyHelper = EA and EA["EA_GetPartyMembers"]
+    if type(partyHelper) == "function" and character and character ~= "" then
+        local okParty, party = pcall(partyHelper, character)
+        if okParty and type(party) == "table" then
+            for _, member in ipairs(party) do
+                AddActor(member)
+            end
+        end
+    end
+
+    if Osi and Osi.DB_PartyMembers and Osi.DB_PartyMembers.Get then
+        local okRows, rows = pcall(function()
+            return Osi.DB_PartyMembers:Get(nil)
+        end)
+        if okRows and type(rows) == "table" then
+            for _, row in ipairs(rows) do
+                AddActor(row and row[1])
+            end
+        end
+    end
+
+    if Osi and Osi.DB_Players and Osi.DB_Players.Get then
+        local okRows, rows = pcall(function()
+            return Osi.DB_Players:Get(nil)
+        end)
+        if okRows and type(rows) == "table" then
+            for _, row in ipairs(rows) do
+                AddActor(row and row[1])
+            end
+        end
+    end
+
+    if Osi and Osi.IsSpeakerReserved then
+        for _, actor in ipairs(actors) do
+            local okReserved, reserved = pcall(Osi.IsSpeakerReserved, actor)
+            if okReserved and tonumber(reserved) == 1 then
+                return {
+                    blocked = true,
+                    reason = "dialog_or_cutscene",
+                    actor = actor,
+                    source = "speaker_reserved",
+                    checkedActors = #actors,
+                }
+            end
+        end
+    end
+
+    return {
+        blocked = false,
+        reason = "",
+        actor = "",
+        source = "speaker_reserved",
+        checkedActors = #actors,
+    }
 end
 
 -- Optional aggressive cleanup for old, unloaded tracked spawns (prevents save bloat)
@@ -1312,7 +1432,7 @@ function EA_AggressiveSpawnedCleanup()
 
     for _, id in ipairs(keys) do
         local data = spawned[id]
-        if type(data) ~= "table" then
+        if type(data) ~= "table" and type(data) ~= "userdata" then
             spawned[id] = nil
             removed = removed + 1
             dirty = true

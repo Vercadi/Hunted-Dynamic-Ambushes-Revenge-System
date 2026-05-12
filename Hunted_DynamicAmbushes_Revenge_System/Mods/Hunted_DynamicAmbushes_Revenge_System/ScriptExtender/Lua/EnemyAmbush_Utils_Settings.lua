@@ -196,7 +196,7 @@ EnemyAmbush.SettingsDefaults = EnemyAmbush.SettingsDefaults or {
     ["MCM_ShowAmbushWarningNotifications"] = false,
     ["MCM_ShowChampionArrivalPopup"] = false,
     ["MCM_ArrivalCuePolicy"]         = "BALANCED",
-    ["MCM_SpawnPlacementMode"]       = "AUTO",
+    ["MCM_SpawnPlacementMode"]       = "CREATE_OOS_ONLY",
 
     ["MCM_EnableReputation"]         = true,
     ["MCM_ShowReputationWarnings"]   = false,
@@ -518,13 +518,13 @@ local EA_OWNER_STRING_DEFAULTS = {
     ["MCM_DifficultyPreset"] = "Marked",
     ["MCM_CustomBasePreset"] = "Marked",
     ["MCM_ArrivalCuePolicy"] = "BALANCED",
-    ["MCM_SpawnPlacementMode"] = "AUTO",
+    ["MCM_SpawnPlacementMode"] = "CREATE_OOS_ONLY",
     ["MCM_BalanceProfile"] = "BG3_12",
 }
 
 local EA_OWNER_ENUM_DEFAULTS = {
     ["MCM_ArrivalCuePolicy"] = "BALANCED",
-    ["MCM_SpawnPlacementMode"] = "AUTO",
+    ["MCM_SpawnPlacementMode"] = "CREATE_OOS_ONLY",
     ["MCM_BalanceProfile"] = "BG3_12",
 }
 
@@ -977,10 +977,7 @@ function EA_IsRestAmbushEnabled()
 end
 
 function EA_GetTimeInDangerPressureEnabled()
-    if EA_IsAdvancedMode() then
-        return EA_GetOwnerCachedSetting("MCM_EnableTimeInDangerPressure", true) == true
-    end
-    return EA_GetPreset().enableTimeInDangerPressure ~= false
+    return EA_GetOwnerCachedSetting("MCM_EnableTimeInDangerPressure", true) == true
 end
 
 function EA_GetStrictProgressionGates()
@@ -1018,11 +1015,11 @@ function EA_GetArrivalCueChanceScale()
 end
 
 function EA_GetSpawnPlacementMode()
-    return EA_GetOwnerCachedSetting("MCM_SpawnPlacementMode", "AUTO")
+    return EA_GetOwnerCachedSetting("MCM_SpawnPlacementMode", "CREATE_OOS_ONLY")
 end
 
 function EA_GetSpawnPlacementModeLabel(value)
-    return EA_ContractGetValueLabel("MCM_SpawnPlacementMode", value or EA_GetOwnerCachedSetting("MCM_SpawnPlacementMode", "AUTO"), "AUTO")
+    return EA_ContractGetValueLabel("MCM_SpawnPlacementMode", value or EA_GetOwnerCachedSetting("MCM_SpawnPlacementMode", "CREATE_OOS_ONLY"), "Create OOS Only")
 end
 
 function EA_ShouldSkipBeachTutorialAmbush()

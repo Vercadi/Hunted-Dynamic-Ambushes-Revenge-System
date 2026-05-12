@@ -59,7 +59,7 @@ local EA_REGION_POLICY = {
 
     -- ===== SPECIAL / OTHER PLANES =====
     ["CRE_Astral_A"] = { act = 0, label = "Astral Plane", blocked = true },
-    ["AVE_Main_A"] = { act = 0, label = "House of Hope", pressureMult = 2.0 },
+    ["AVE_Main_A"] = { act = 0, label = "House of Hope", setpiece = true, blocked = true },
     ["SHA_Main_A"] = { act = 0, label = "Shadowfell" },
 
     -- ===== CAMP =====
@@ -85,7 +85,7 @@ local EA_TRIGGER_SAFE_ZONE_DEFS = {
         label = "Emerald Grove",
         blocked = true,
         reason = "settlement_hub",
-        sourceNote = "Norbyte DEN_* marker-target triggers",
+        sourceNote = "Norbyte DEN_* lair/hub/trader/hideout triggers",
         rawPatterns = { "WLD_DruidSubs_", "WLD_DenSubs_" },
         triggers = {
             "8a64c311-e43a-4e2f-81d5-401728fd07bb",
@@ -96,13 +96,29 @@ local EA_TRIGGER_SAFE_ZONE_DEFS = {
             "25d3b069-a9a6-4895-81c7-7405e1a70c01",
             "687f429f-91f5-4e8f-9ab2-04cf6cfa23ba",
             "1eaef46b-2ba4-487c-893b-95b178f3bf0f",
+            "9eea20f5-4832-4e71-a310-c825237a00a7",
+            "8182d25e-d90f-4e75-9615-34bc5929ad0a",
+            "a678b3dd-aa86-41a2-9138-5d8f328bb77d",
+            "5e96478b-d5df-41d3-a20e-4ae522f75144",
+            "bc0ea3d8-aac1-49a8-b284-30d2029186f6",
+            "66dedc4c-25c0-457f-8b07-a87d7b1d0688",
+        },
+    },
+    AUNTIE_ETHEL_LAIR = {
+        label = "Auntie Ethel's lair",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified Gustav trigger S_HAG_HagLair_f84e3319-4a1d-483c-a718-dee3bff70d07",
+        rawPatterns = { "HagLair", "Hag_C" },
+        triggers = {
+            "f84e3319-4a1d-483c-a718-dee3bff70d07",
         },
     },
     LAST_LIGHT_INN = {
         label = "Last Light Inn",
         blocked = true,
         reason = "settlement_hub",
-        sourceNote = "Norbyte HAV_* marker-target triggers",
+        sourceNote = "Norbyte HAV_* hub/cellar/interior triggers",
         rawPatterns = { "SCL_Haven_" },
         triggers = {
             "bceea38d-fe28-4a17-9581-48e1c9f23f4a",
@@ -110,6 +126,49 @@ local EA_TRIGGER_SAFE_ZONE_DEFS = {
             "e5073cbc-25df-4f03-83f0-bede4669762d",
             "fec9a316-3db9-4918-a3c2-6d00b8f29ce9",
             "335c7cf0-c83d-4a67-8c04-acef5a3fa5b0",
+            "1df96345-f975-40fd-a185-5716619f8d7e",
+            "c65180c5-2ac2-4620-902c-0b92c33c324d",
+            "6ac001f4-9c56-4a1b-963d-a509e158ffab",
+            "eee18cb6-443a-4b8f-ad19-58dff3d731d8",
+            "69a889f7-2dad-43cf-86e4-e4f2331e54cc",
+            "01b3e82a-6e82-4c6d-9213-ddd67439826b",
+        },
+    },
+    MOONRISE_TOWERS = {
+        label = "Moonrise Towers",
+        blocked = true,
+        reason = "settlement_hub",
+        sourceNote = "Norbyte MOO_* tower/interior triggers",
+        rawPatterns = { "MOO_" },
+        triggers = {
+            "f088177f-ceba-4019-8d1d-1c505d046a35",
+            "0e3f7ebc-9932-488b-aef0-f55660b03cda",
+            "14187ad9-cf83-44f9-81bf-bb46cb4cd8e6",
+            "429a55cc-58d2-4469-9577-852131e1fff3",
+            "93c522d3-04c4-4f71-a1dc-043478c51301",
+            "77c94e75-2924-4ca3-b7bd-d631b18d6c73",
+            "b262cbea-f40c-47da-9f34-ba8ce5bf782b",
+            "b50b8553-0064-41d0-8595-266f69e35c33",
+            "c6f54de0-1c8f-4cf8-bcf9-b13c8f53b05b",
+            "d066ff4c-bc01-4e46-97ad-f641ccd61929",
+        },
+    },
+    ACT2_SETPIECE_INTERIORS = {
+        label = "Act 2 setpiece interior",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Norbyte SHA/SCL setpiece triggers and raw sublevel names",
+        rawPatterns = {
+            "SCL_MindflayerColony",
+            "SCL_Mausoleum",
+            "SCL_KethericEntrance",
+            "SCL_VillageSubs",
+            "SHA_",
+        },
+        triggers = {
+            "0a302268-dd92-4462-99e5-ca7491815ec0",
+            "348b76ee-33d8-471b-a95d-7ded0d6cdfd5",
+            "961f86d2-b05c-40c5-b2e4-bf40c089f481",
         },
     },
     FRIENDLY_ARM_INN = {
@@ -119,6 +178,126 @@ local EA_TRIGGER_SAFE_ZONE_DEFS = {
         sourceNote = "Raw-region fallback only; trigger UUID pending local content/source data",
         rawPatterns = { "BGO_FriendlyArmInn_" },
         triggers = {},
+    },
+    SORCEROUS_SUNDRIES = {
+        label = "Sorcerous Sundries / Ramazith Tower",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and Sorcerous Sundries trigger",
+        rawPatterns = { "BGH_SorcerersSundries_A_ART", "BGO_RamazithTower_A_ART", "CTY_SorcerousSundriesBasement_A" },
+        triggers = { "59e9313f-29cd-48b4-9241-4e5db28f6bbf" },
+    },
+    ELFSONG_TAVERN = {
+        label = "Elfsong Tavern",
+        blocked = true,
+        reason = "settlement_hub",
+        sourceNote = "Verified Act 3 raw sublevels and Elfsong triggers",
+        rawPatterns = { "BGH_ElfSongTavern_A_Art", "BGO_ElfsongBasement_A", "CMP_BGO_Elfsong_", "CTY_CIN_PrivateCampRoom_Elfsong_A" },
+        triggers = { "b905146f-d47c-469f-b96a-6d3b42dd35f5", "ce0fea85-47ad-4e27-8aa1-ad1699d4f320" },
+    },
+    JAHEIRA_HOME = {
+        label = "Jaheira's home",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and Jaheira basement trigger",
+        rawPatterns = { "BGO_JaheiraBasement_B", "PLT_CTY_JaheiraTreasure_" },
+        triggers = { "3be5ee75-b8a5-473f-9b82-b60f90b742ca" },
+    },
+    STORMSHORE_TABERNACLE = {
+        label = "Stormshore Tabernacle",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and tabernacle trigger",
+        rawPatterns = { "BGH_StormshoreTabernacle_A", "CTY_Tabernacle_Basement_A" },
+        triggers = { "d9fcb0ed-4fb0-4439-9644-2209cf93ee42" },
+    },
+    COUNTING_HOUSE = {
+        label = "Counting House",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels; trigger UUID UNVERIFIED/not added",
+        rawPatterns = { "BGH_Countinghouse_C", "BGH_CountingHouseVault_C", "BGH_CountingHouseVaultConnection_A" },
+        triggers = {},
+    },
+    FIGARO_SHOP = {
+        label = "Figaro's shop",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and Figaro trigger",
+        rawPatterns = { "BGH_FigaroCosmeticShop_A", "CTY_Figaro_Basement_A" },
+        triggers = { "24bc4789-18c9-4ec5-8188-5c2e837e9496" },
+    },
+    DEVILS_FEE = {
+        label = "Devil's Fee",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and Devil's Fee trigger",
+        rawPatterns = { "BGH_DiabolistHouse_A_ART", "BGO_DiabolistCellar_A_ART" },
+        triggers = { "54727477-6f56-4e87-a63d-3cc8f67616a4" },
+    },
+    HOUSE_OF_GRIEF = {
+        label = "House of Grief",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and House of Grief trigger",
+        rawPatterns = { "BGH_House_of_Grief", "BGO_Sharran_Grotto" },
+        triggers = { "8bffed4d-fe97-4cd8-b8a3-ad65833b2485" },
+    },
+    CAZADOR_PALACE = {
+        label = "Cazador's palace",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and Cazador palace triggers",
+        rawPatterns = { "CTY_CazadorPalace_A", "CTY_CazSideRooms_A", "BGO_UC_CazadorChapel_A", "PLT_Cazador" },
+        triggers = { "3be855c5-58aa-49ed-a74e-b094c41c5d77", "a6f08f08-56e2-4af6-951c-15e46ea8c75c" },
+    },
+    STEEL_WATCH_FOUNDRY = {
+        label = "Steel Watch Foundry",
+        blocked = true,
+        reason = "story_interior",
+        sourceNote = "Verified Act 3 raw sublevels and foundry triggers",
+        rawPatterns = { "BGH_SteelWatchFoundry_B", "BGO_SteelWatchLabControlCenter_B", "PLT_SteelWatchFoundry_" },
+        triggers = { "2a286caf-5b3f-4470-9c9c-10b3e70356fe", "6aef5972-edd8-4e19-a211-064d5e5b254e" },
+    },
+    IRON_THRONE_SUPPORT = {
+        label = "Submersible / Iron Throne support",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified raw sublevels; trigger UUID UNVERIFIED/not added",
+        rawPatterns = { "CTY_Submersible_A", "PLT_CTY_Submersible" },
+        triggers = {},
+    },
+    WYRMWAY = {
+        label = "Wyrmway",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified raw sublevels; trigger UUID UNVERIFIED/not added",
+        rawPatterns = { "BGO_Wyrmsway", "BGO_CIN_WyrmswayArena", "PLT_WYR_Wyrmway" },
+        triggers = {},
+    },
+    MURDER_TRIBUNAL = {
+        label = "Murder Tribunal",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified raw sublevel; trigger UUID UNVERIFIED/not added",
+        rawPatterns = { "CTY_MurderTribunal_A" },
+        triggers = {},
+    },
+    BHAAL_ANCIENT_LAIR = {
+        label = "Ancient Lair / Bhaal catacombs",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified Act 3 raw sublevels and Ancient Lair trigger",
+        rawPatterns = { "CTY_AncientLair_A", "CTY_Catacombs_A" },
+        triggers = { "4bd5906b-d5e3-4a7e-89a9-88c50360d7a2" },
+    },
+    HOUSE_OF_HOPE = {
+        label = "House of Hope",
+        blocked = true,
+        reason = "narrative_setpiece",
+        sourceNote = "Verified raw region AVE_Main_A and House of Hope trigger",
+        rawPatterns = { "BGO_HouseOfHope" },
+        triggers = { "9f7aa5e7-80f5-42ca-a939-c680c552fbfc" },
     },
 }
 
@@ -264,6 +443,7 @@ function EA_GetSafeZoneState(character)
     local rawIds = EA_GetRawSafeZoneIds(raw)
     local combined = {}
     local triggerBlocked = false
+    local rawBlocked = false
 
     for zoneId in pairs(triggerIds) do
         combined[zoneId] = true
@@ -274,6 +454,10 @@ function EA_GetSafeZoneState(character)
     end
     for zoneId in pairs(rawIds) do
         combined[zoneId] = true
+        local def = EA_TRIGGER_SAFE_ZONE_DEFS[zoneId]
+        if def == nil or def.blocked ~= false then
+            rawBlocked = true
+        end
     end
 
     local labels = EA_BuildSafeZoneLabels(combined)
@@ -287,7 +471,10 @@ function EA_GetSafeZoneState(character)
         character = EA_NormalizeSafeZoneKey(character),
         canonical = tostring(canonical or ""),
         raw = tostring(raw or ""),
+        blocked = triggerBlocked == true or rawBlocked == true,
+        blockReason = (rawBlocked == true and "raw_safe_zone_block") or (triggerBlocked == true and "safe_zone_block") or "",
         triggerBlocked = triggerBlocked == true,
+        rawBlocked = rawBlocked == true,
         triggerZoneIds = triggerIds,
         rawZoneIds = rawIds,
         activeZoneIds = activeZoneIds,
@@ -297,7 +484,7 @@ end
 
 function EA_IsCharacterInBlockedSafeZone(character)
     local state = EA_GetSafeZoneState(character)
-    return state.triggerBlocked == true
+    return state.blocked == true
 end
 
 function EA_RebuildSafeZoneRegistration()

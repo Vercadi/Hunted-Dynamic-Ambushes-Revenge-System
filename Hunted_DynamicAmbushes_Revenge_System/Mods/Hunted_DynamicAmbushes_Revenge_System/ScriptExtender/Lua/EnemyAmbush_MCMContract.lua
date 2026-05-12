@@ -24,7 +24,6 @@ contract.CONTROL_SETTING_IDS = {
 contract.PRESET_SETTING_IDS = {
     ["MCM_AmbushIntensity"] = true,
     ["MCM_ApplyPartySurprised"] = true,
-    ["MCM_EnableTimeInDangerPressure"] = true,
     ["MCM_AmbushXPPercent"] = true,
     ["MCM_DisableAmbushLoot"] = true,
     ["MCM_AllowChampionLoot"] = true,
@@ -52,6 +51,7 @@ contract.GLOBAL_SETTING_IDS = {
     ["MCM_ShowChampionArrivalPopup"] = true,
     ["MCM_ShowReputationWarnings"] = true,
     ["MCM_ReputationDecayRate"] = true,
+    ["MCM_EnableTimeInDangerPressure"] = true,
     ["MCM_EnableVanillaSummons"] = true,
     ["MCM_CombatExtenderMode"] = true,
     ["MCM_BalanceProfile"] = true,
@@ -76,7 +76,6 @@ contract.SUPPORT_SETTING_IDS = {
 
 contract.PRESET_SETTING_BINDINGS = {
     { id = "MCM_ApplyPartySurprised", field = "applyPartySurprised", default = false, kind = "bool" },
-    { id = "MCM_EnableTimeInDangerPressure", field = "enableTimeInDangerPressure", default = true, kind = "bool" },
     { id = "MCM_EnableAmbushCooldown", field = "cooldownEnabled", default = true, kind = "bool" },
     { id = "MCM_AmbushCooldownMinutes", field = "cooldownMin", default = 45, kind = "number" },
     { id = "MCM_AmbushChanceShortPct", field = "shortChancePct", default = 5, kind = "number" },

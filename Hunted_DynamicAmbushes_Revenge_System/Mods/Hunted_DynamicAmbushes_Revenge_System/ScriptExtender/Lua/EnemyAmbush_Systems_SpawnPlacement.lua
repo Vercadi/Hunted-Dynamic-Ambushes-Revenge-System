@@ -65,6 +65,14 @@ function M.Build(deps)
     local EA_EvictOldSpawned = deps.EA_EvictOldSpawned or function() end
     local EA_GetEffectiveDisableAmbushLoot = deps.EA_GetEffectiveDisableAmbushLoot or function() return false end
     local EA_ApplyNoLootFlags = deps.EA_ApplyNoLootFlags
+    local EA_DiagRecordEncounterSpawn = deps.EA_DiagRecordEncounterSpawn or (EA and EA["EA_DiagRecordEncounterSpawn"]) or function() return false end
+    local EA_DiagRecordCleanup = deps.EA_DiagRecordCleanup or (EA and EA["EA_DiagRecordCleanup"]) or function() return false end
+    local EA_GetPartyMembers = deps.EA_GetPartyMembers or function(player)
+        if player and player ~= "" then
+            return { player }
+        end
+        return {}
+    end
     local GetSafeLevel = deps.GetSafeLevel or function() return 1 end
     local PerformanceMetrics = deps.PerformanceMetrics
     local CurrentAmbushTheme = deps.CurrentAmbushTheme
@@ -185,7 +193,12 @@ local function EA_RemoveSpawnedEnemyImmediate(enemy, reason)
     if not enemy or enemy == "" then return end
     local norm = EA_NormalizeUUID(enemy) or enemy
     local spawned = EA_Spawned()
+    local spawnedData = nil
     if type(spawned) == "table" or type(spawned) == "userdata" then
+        spawnedData = spawned[norm] or spawned[enemy]
+        if type(spawnedData) == "table" then
+            pcall(EA_DiagRecordCleanup, enemy, tostring(reason or "unknown"), spawnedData)
+        end
         spawned[norm] = nil
         spawned[enemy] = nil
     end
@@ -260,6 +273,60 @@ local function EA_ScheduleSpawnIntegrityWatch(enemy, player)
     local enemyRef = enemy
     local playerRef = player
 
+    local function HasLoSValue(value)
+        return value == true or tonumber(value) == 1
+    end
+
+    local function GetPartySnapshot()
+        local members = {}
+        if type(EA_GetPartyMembers) == "function" and playerRef and playerRef ~= "" then
+            local okParty, outParty = pcall(EA_GetPartyMembers, playerRef)
+            if okParty and type(outParty) == "table" then
+                members = outParty
+            end
+        end
+        if #members == 0 and playerRef and playerRef ~= "" then
+            members[1] = playerRef
+        end
+        return members
+    end
+
+    local function GetClosestPartyDistance2D(ex, ez, members)
+        local closestDist = nil
+        for i = 1, #(members or {}) do
+            local member = members[i]
+            if member and member ~= "" and Osi.ObjectExists and Osi.ObjectExists(member) == 1 then
+                local px, _, pz = SafeGetPosition(member)
+                if px and pz then
+                    local dx = (tonumber(ex) or 0) - (tonumber(px) or 0)
+                    local dz = (tonumber(ez) or 0) - (tonumber(pz) or 0)
+                    local dist2D = math.sqrt((dx * dx) + (dz * dz))
+                    if not closestDist or dist2D < closestDist then
+                        closestDist = dist2D
+                    end
+                end
+            end
+        end
+        return closestDist
+    end
+
+    local function HasLineOfSightToParty(members)
+        if not HasLineOfSight then
+            return false
+        end
+        for i = 1, #(members or {}) do
+            local member = members[i]
+            if member and member ~= "" and Osi.ObjectExists and Osi.ObjectExists(member) == 1 then
+                local okLosA, losA = pcall(HasLineOfSight, enemyRef, member)
+                local okLosB, losB = pcall(HasLineOfSight, member, enemyRef)
+                if (okLosA and HasLoSValue(losA)) or (okLosB and HasLoSValue(losB)) then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+
     local function Check(afterKick)
         if Osi.ObjectExists and Osi.ObjectExists(enemyRef) ~= 1 then
             return
@@ -283,6 +350,41 @@ local function EA_ScheduleSpawnIntegrityWatch(enemy, player)
 
         local inCombat = (Osi.IsInCombat and Osi.IsInCombat(enemyRef) == 1) or false
         local stillDeferred = (data.joinDeferred == true)
+        if inCombat and (not stillDeferred) then
+            local createdAt = tonumber(data.tsCreated) or 0
+            local now = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
+            local ageMs = now - createdAt
+            local ex, ey, ez = SafeGetPosition(enemyRef)
+            local partyMembers = GetPartySnapshot()
+
+            if ageMs >= 30000 and ex and ez and #partyMembers > 0 then
+                local dist2D = GetClosestPartyDistance2D(ex, ez, partyMembers)
+                local lastDist = tonumber(data._eaPlacementWatchLastDist)
+                local lastAt = tonumber(data._eaPlacementWatchLastAt) or 0
+                local stalled = dist2D ~= nil and lastDist ~= nil and math.abs(dist2D - lastDist) < 1.0 and (now - lastAt) >= 4500
+                local hasLoS = HasLineOfSightToParty(partyMembers)
+
+                data._eaPlacementWatchLastDist = dist2D
+                data._eaPlacementWatchLastAt = now
+                if dist2D ~= nil and dist2D >= 45.0 and stalled and not hasLoS then
+                    data._eaPlacementWatchStalledCount = (tonumber(data._eaPlacementWatchStalledCount) or 0) + 1
+                    if data._eaPlacementWatchStalledCount >= 2 then
+                        data.distance2D = dist2D
+                        EA_RemoveSpawnedEnemyImmediate(enemyRef, "placement_watchdog_distance_stalled")
+                        return
+                    end
+                else
+                    data._eaPlacementWatchStalledCount = 0
+                end
+            end
+
+            if ageMs < 70000 then
+                Ext.Timer.WaitFor(5000, function()
+                    Check(afterKick == true)
+                end)
+            end
+            return
+        end
         if (not inCombat) and stillDeferred then
             local createdAt = tonumber(data.tsCreated) or 0
             local now = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
@@ -456,6 +558,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
     local minSpawnDistance = math.max(8.0, (tonumber(spawnDist) or 12.0) * 0.60)
 
     local spawnX, spawnY, spawnZ = nil, nil, nil
+    local placementSource = nil
     local forceFindValidPosition = (type(ctx.ambushRoll) == "table" and ctx.ambushRoll.forceFindValidPosition == true)
     local function EA_TryGetPositionViaOsi(entity)
         if not entity or entity == "" then
@@ -476,9 +579,9 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
         end
         return nil, nil, nil
     end
-    local placementMode = tostring(EA_GetSpawnPlacementMode() or "AUTO"):upper()
+    local placementMode = tostring(EA_GetSpawnPlacementMode() or "CREATE_OOS_ONLY"):upper()
     if placementMode ~= "AUTO" and placementMode ~= "FIND_VALID_ONLY" and placementMode ~= "CREATE_OOS_ONLY" then
-        placementMode = "AUTO"
+        placementMode = "CREATE_OOS_ONLY"
     end
     if forceFindValidPosition then
         placementMode = "FIND_VALID_ONLY"
@@ -539,6 +642,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                     if heightDelta <= EA_MAX_SPAWN_HEIGHT_DELTA and (not tooClose) then
                         enemy = guid
                         spawnX, spawnY, spawnZ = ex, ey, ez
+                        placementSource = "create_oos"
                         if EA_GetSettingBool("MCM_DebugMode", false) then
                             DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection succeeded (attempt %d, dist=%d): %s", attempt, createDist, tostring(guid)))
                         end
@@ -547,6 +651,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                     elseif heightDelta <= EA_MAX_SPAWN_HEIGHT_DELTA and (placementMode == "CREATE_OOS_ONLY" or placementMode == "AUTO") and zeroDistanceProbe then
                         enemy = guid
                         spawnX, spawnY, spawnZ = ex, ey, ez
+                        placementSource = "create_oos_zero_distance_probe"
                         UpdateMetric("createOutOfSightZeroDistanceAccepted")
                         if EA_GetSettingBool("MCM_DebugMode", false) then
                             DebugPrint(string.format("[Spawn] CreateOutOfSightAtDirection accepted deferred zero-distance probe (attempt %d, dist=%d): %s", attempt, createDist, tostring(guid)))
@@ -667,6 +772,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
                     else
                         enemy = created
                         spawnX, spawnY, spawnZ = validX, validY, validZ
+                        placementSource = "find_valid"
                         if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayer") end
                         break
                     end
@@ -726,6 +832,7 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
             if ok and created and created ~= "" then
                 enemy = created
                 spawnX, spawnY, spawnZ = fx, fy, fz
+                placementSource = "fallback_find_valid"
                 if EA_RecordSpawnSuccess then EA_RecordSpawnSuccess("SpawnHostileNearPlayerFallback") end
                 if EA_IsRobust() then
                     EA_LogEvent("SPAWN", "Fallback spawn succeeded (LoS-relaxed) template=" .. tostring(spawnTemplate))
@@ -745,11 +852,15 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
     end
 
     if not enemy then
+        local failureReason = (placementMode == "CREATE_OOS_ONLY") and "oos_spawn_failed" or "spawn_placement_failed"
         UpdateMetric("spawnsFailed")
         UpdateMetric("spawnPlacementFailed")
-        EA_SetLastError("SpawnPlacementFailed", "template=" .. tostring(spawnTemplate) .. " tier=" .. tostring(category))
-        EA_LogEvent("SPAWN_FAIL", "Failed after " .. tostring(attempts) .. " attempts template=" .. tostring(spawnTemplate))
-        if EA_RecordSpawnFailure then EA_RecordSpawnFailure("SpawnHostileNearPlayer template=" .. tostring(spawnTemplate) .. " tier=" .. tostring(category)) end
+        if failureReason == "oos_spawn_failed" then
+            UpdateMetric("oosSpawnFailed")
+        end
+        EA_SetLastError("SpawnPlacementFailed", "reason=" .. failureReason .. " template=" .. tostring(spawnTemplate) .. " tier=" .. tostring(category))
+        EA_LogEvent("SPAWN_FAIL", "reason=" .. failureReason .. " attempts=" .. tostring(attempts) .. " template=" .. tostring(spawnTemplate))
+        if EA_RecordSpawnFailure then EA_RecordSpawnFailure(failureReason .. " template=" .. tostring(spawnTemplate) .. " tier=" .. tostring(category)) end
         DebugPrint("SpawnHostileNearPlayer: Failed to spawn enemy after", attempts, "attempts")
         return nil
     end
@@ -757,6 +868,17 @@ local function EA_SpawnHostileNearPlayer_DoCreate(ctx)
 
     ctx.enemy = enemy
     ctx.spawnX, ctx.spawnY, ctx.spawnZ = spawnX, spawnY, spawnZ
+    ctx.placementSource = placementSource or "unknown"
+    ctx.placementMode = placementMode
+    ctx.spawnAnchorX, ctx.spawnAnchorY, ctx.spawnAnchorZ = x, y, z
+    if spawnX and spawnZ and x and z then
+        local dx = (tonumber(spawnX) or 0) - (tonumber(x) or 0)
+        local dz = (tonumber(spawnZ) or 0) - (tonumber(z) or 0)
+        ctx.spawnDistance2D = math.sqrt((dx * dx) + (dz * dz))
+    end
+    if spawnY and y then
+        ctx.spawnHeightDelta = math.abs((tonumber(spawnY) or 0) - (tonumber(y) or 0))
+    end
     return ctx
 end
 
@@ -1392,6 +1514,16 @@ local function EA_SpawnHostileNearPlayer_PostConfigure(ctx)
             despawnVFX = enemyData.despawnVFX or EnemyData.DEFAULT_DESPAWN_VFX,
             xpRewardCategory = rewardCat,
             spawnTemplate = xpCloneTemplate,
+            placementSource = ctx.placementSource,
+            placementMode = ctx.placementMode,
+            spawnX = ctx.spawnX,
+            spawnY = ctx.spawnY,
+            spawnZ = ctx.spawnZ,
+            spawnAnchorX = ctx.spawnAnchorX,
+            spawnAnchorY = ctx.spawnAnchorY,
+            spawnAnchorZ = ctx.spawnAnchorZ,
+            spawnDistance2D = ctx.spawnDistance2D,
+            spawnHeightDelta = ctx.spawnHeightDelta,
             tsCreated = EA_NowMs(),
             lastSeen = EA_NowMs(),
         }
@@ -1403,9 +1535,32 @@ local function EA_SpawnHostileNearPlayer_PostConfigure(ctx)
     end
 
     -- Economy / UX: apply no-loot flags now, clear corpse inventory on death event.
-    if EA_GetEffectiveDisableAmbushLoot() then
+    local disableAmbushLoot = EA_GetEffectiveDisableAmbushLoot()
+    if disableAmbushLoot then
         EA_ApplyNoLootFlags(enemy)
     end
+
+    pcall(EA_DiagRecordEncounterSpawn, type(ambushRoll) == "table" and ambushRoll.diagRecordId or nil, {
+        ambushId = ambushId,
+        enemy = enemy,
+        name = enemyData.name,
+        creatureType = enemyData.creatureType,
+        tier = category,
+        powerClass = enemyData.powerClass,
+        spawnRole = spawnRole,
+        template = xpOriginalTemplate,
+        spawnTemplate = xpCloneTemplate,
+        scaledLevel = scaledLevel,
+        templateLevel = enemyData.level,
+        xpPct = xpPct,
+        noLoot = disableAmbushLoot == true,
+        isChampion = false,
+        isRetinue = spawnRole == "champion_retinue",
+        placementSource = ctx.placementSource,
+        placementMode = ctx.placementMode,
+        spawnDistance2D = ctx.spawnDistance2D,
+        spawnHeightDelta = ctx.spawnHeightDelta,
+    })
 
     EA_ScheduleSpawnIntegrityWatch(enemy, player)
 

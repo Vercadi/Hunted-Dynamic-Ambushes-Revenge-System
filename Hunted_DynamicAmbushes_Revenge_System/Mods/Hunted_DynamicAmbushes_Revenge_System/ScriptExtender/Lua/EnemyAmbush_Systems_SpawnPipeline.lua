@@ -767,6 +767,7 @@ end
 return math.max(1, math.min(level, 20))
 end
 
+local EA_SUMMON_PARTY_WEIGHT = 0.25
 local EA_PARTY_CACHE = { key = "", fetchedAt = 0, members = nil, ttlMs = 250 }
 
 local function EA_GetNowForPartyCache()
@@ -837,21 +838,7 @@ local function EA_GetPartyMembersCached(player)
     return EA_UpdatePartyCache(key, now, EA_ProbePartyMembers(player))
 end
 
--- Helper: get maximum level among members in the same party as 'player'
-local function GetPartyMaxLevel(player)
-    local maxLevel = GetSafeLevel(player)
-    local members = EA_GetPartyMembersCached(player)
-    for i = 1, #members do
-        local lvl = GetSafeLevel(members[i])
-        if lvl > maxLevel then
-            maxLevel = lvl
-        end
-    end
-    return maxLevel
-end
-
--- Get party size (counts members in the same party as player)
-GetPartySize = function(player)
+local function EA_GetPartyMembersForSizing(player)
     local members = EA_GetPartyMembersCached(player)
     local count = #members
     if count <= 1 then
@@ -873,13 +860,76 @@ GetPartySize = function(player)
                     tostring(player), count, bestCount
                 ))
             end
-            count = bestCount
+            members = bestMembers
         end
     end
-    if count <= 0 then
-        return 1
+    return members
+end
+
+local function EA_IsRealPartyMember(member, anchorPlayer)
+    if member and anchorPlayer and member == anchorPlayer then
+        return true
     end
-    return count
+    if member and member ~= "" and Osi and Osi.IsPlayer then
+        local ok, isPlayer = pcall(Osi.IsPlayer, member)
+        if ok and tonumber(isPlayer) == 1 then
+            return true
+        end
+    end
+    return false
+end
+
+function EA_GetPartyProfile(player)
+    local members = EA_GetPartyMembersForSizing(player)
+    local rawCount = #members
+    local realCount = 0
+    local nonPlayerCount = 0
+
+    for i = 1, #members do
+        local member = members[i]
+        if EA_IsRealPartyMember(member, player) then
+            realCount = realCount + 1
+        else
+            nonPlayerCount = nonPlayerCount + 1
+        end
+    end
+
+    if realCount <= 0 then
+        realCount = 1
+    end
+
+    local summonBonus = math.floor((nonPlayerCount * EA_SUMMON_PARTY_WEIGHT) + 0.0001)
+    local effectiveSize = math.max(1, math.min(12, realCount + summonBonus))
+
+    return {
+        rawPartySize = rawCount,
+        effectivePartySize = effectiveSize,
+        realPartyMembers = realCount,
+        nonPlayerPartyMembers = nonPlayerCount,
+        summonFollowerBonus = summonBonus,
+        summonFollowerWeight = EA_SUMMON_PARTY_WEIGHT,
+    }
+end
+EA["EA_GetPartyProfile"] = EA_GetPartyProfile
+
+-- Helper: get maximum level among members in the same party as 'player'
+local function GetPartyMaxLevel(player)
+    local maxLevel = GetSafeLevel(player)
+    local members = EA_GetPartyMembersCached(player)
+    for i = 1, #members do
+        local lvl = GetSafeLevel(members[i])
+        if lvl > maxLevel then
+            maxLevel = lvl
+        end
+    end
+    return maxLevel
+end
+
+-- Get effective party size. Real party members count fully; non-player party
+-- entries such as summons/followers contribute one effective member per four.
+GetPartySize = function(player)
+    local profile = EA_GetPartyProfile(player)
+    return tonumber(profile and profile.effectivePartySize) or 1
 end
 
 local function EA_GetPartyMembers(player)
@@ -1746,6 +1796,9 @@ if SystemsSpawnPlacement and type(SystemsSpawnPlacement.Build) == "function" the
         EA_EvictOldSpawned = EA_EvictOldSpawned,
         EA_GetEffectiveDisableAmbushLoot = EA_GetEffectiveDisableAmbushLoot,
         EA_ApplyNoLootFlags = EA_ApplyNoLootFlags,
+        EA_DiagRecordEncounterSpawn = EA["EA_DiagRecordEncounterSpawn"],
+        EA_DiagRecordCleanup = EA["EA_DiagRecordCleanup"],
+        EA_GetPartyMembers = EA_GetPartyMembers,
         GetSafeLevel = GetSafeLevel,
         PerformanceMetrics = PerformanceMetrics,
         CurrentAmbushTheme = CurrentAmbushTheme,
@@ -1807,12 +1860,40 @@ if Osi.IsInCombat and Osi.IsInCombat(character) == 1 then
     return false
 end
 
--- Check if character is reserved as speaker (in dialog)
-if Osi.IsSpeakerReserved and Osi.IsSpeakerReserved(character) == 1 then
+-- Check if trigger/party actors are reserved as speakers (dialog/cutscene)
+local dialogueState = { blocked = false }
+local dialogueSafetyFn = EA_GetDialogueSafetyState or (EA and EA["EA_GetDialogueSafetyState"])
+if type(dialogueSafetyFn) == "function" then
+    local okDialogue, state = pcall(dialogueSafetyFn, character)
+    if okDialogue and type(state) == "table" then
+        dialogueState = state
+    end
+elseif Osi.IsSpeakerReserved then
+    local okReserved, reserved = pcall(Osi.IsSpeakerReserved, character)
+    if okReserved and tonumber(reserved) == 1 then
+        dialogueState = {
+            blocked = true,
+            reason = "dialog_or_cutscene",
+            actor = tostring(character or ""),
+            source = "speaker_reserved",
+        }
+    end
+end
+if dialogueState.blocked == true then
     local now = (EA_NowMs and tonumber(EA_NowMs())) or 0
     if (EA_DialogSkipLastLogMs == 0) or (now - EA_DialogSkipLastLogMs >= EA_DialogSkipLogIntervalMs) then
         EA_DialogSkipLastLogMs = now
         print("[EnemyAmbush] Skipping ambush - character in dialog")
+    end
+    local diagRuntimeBlock = EA_DiagRecordRuntimeBlock or (EA and EA["EA_DiagRecordRuntimeBlock"])
+    if type(diagRuntimeBlock) == "function" then
+        pcall(diagRuntimeBlock, "dialog_or_cutscene", {
+            stage = "spawn_safety",
+            character = tostring(character or ""),
+            actor = tostring(dialogueState.actor or ""),
+            source = tostring(dialogueState.source or ""),
+            checkedActors = tonumber(dialogueState.checkedActors) or 0,
+        })
     end
     return false
 end
@@ -1884,12 +1965,35 @@ if EA_IsCharacterInBlockedSafeZone(character) then
     if active == "" then
         active = "trigger_safe_zone"
     end
+    local blockReason = tostring(safeZoneState.blockReason or "")
+    if blockReason == "" then
+        blockReason = "safe_zone_block"
+    end
+    local diagRuntimeBlock = EA_DiagRecordRuntimeBlock or (EA and EA["EA_DiagRecordRuntimeBlock"])
+    if type(diagRuntimeBlock) == "function" then
+        pcall(diagRuntimeBlock, blockReason, {
+            stage = "spawn_safety",
+            character = tostring(character or ""),
+            canonical = tostring(canonical or ""),
+            raw = tostring(rawRegion or ""),
+            active = tostring(active),
+        })
+    end
     print(string.format("[EnemyAmbush] Skipping ambush - blocked safe zone: %s", tostring(active)))
     return false
 end
 
 -- Sublevel denylist: block setpiece/boss/camp/tutorial sublevels by raw region ID
 if rawRegion and rawRegion ~= "" and EA_IsRawRegionBlocked(rawRegion) then
+    local diagRuntimeBlock = EA_DiagRecordRuntimeBlock or (EA and EA["EA_DiagRecordRuntimeBlock"])
+    if type(diagRuntimeBlock) == "function" then
+        pcall(diagRuntimeBlock, "raw_safe_zone_block", {
+            stage = "spawn_safety",
+            character = tostring(character or ""),
+            canonical = tostring(canonical or ""),
+            raw = tostring(rawRegion or ""),
+        })
+    end
     print(string.format("[EnemyAmbush] Skipping ambush - blocked sublevel: %s", tostring(rawRegion)))
     return false
 end
@@ -2184,6 +2288,7 @@ if SystemsSpawnExecution and type(SystemsSpawnExecution.Build) == "function" the
         end,
         EA_GetSettingRaw = EA_ReadSettingRaw,
         GetPartySize = GetPartySize,
+        EA_GetPartyProfile = EA_GetPartyProfile,
         EA_GetPoolActiveSummonList = EA_GetPoolActiveSummonList,
         GetAmbushThemeForEnemy = GetAmbushThemeForEnemy,
         ValidateEnemyData = ValidateEnemyData,
@@ -2195,6 +2300,9 @@ if SystemsSpawnExecution and type(SystemsSpawnExecution.Build) == "function" the
         EA_RandIntCompat = EA_RandIntCompat,
         EA_PlayRegionAmbience = EA_PlayRegionAmbience,
         EA_PlayPostSpawnBark = EA_PlayPostSpawnBark,
+        EA_DiagBeginEncounter = EA["EA_DiagBeginEncounter"],
+        EA_DiagRecordEncounterFailure = EA["EA_DiagRecordEncounterFailure"],
+        EA_DiagFinalizeEncounter = EA["EA_DiagFinalizeEncounter"],
         EA_SPAWN_STAGGER_MS = tonumber(EA.CFG and EA.CFG.SPAWN_STAGGER_MS) or EA_STAGGER_STEP_MS_DEFAULT,
     }
     SpawnExecutionRuntime = EA_BuildRuntimeWithDeps("Systems_SpawnExecution", SystemsSpawnExecution, spawnExecutionDeps, {
@@ -2210,6 +2318,7 @@ if SystemsSpawnExecution and type(SystemsSpawnExecution.Build) == "function" the
         EA_GetTargetCountPartyBonus = "callable",
         EA_GetEntityCapForParty = "callable",
         GetPartySize = "callable",
+        EA_GetPartyProfile = "callable",
         EA_GetPoolActiveSummonList = "callable",
         ValidateEnemyData = "callable",
         PickEnemyTemplate = "callable",
@@ -2269,6 +2378,7 @@ local spawnPipelineSupportBag = {
     ModuleUUID = ModuleUUID,
     GetSafeLevel = GetSafeLevel,
     GetPartySize = GetPartySize,
+    EA_GetPartyProfile = EA_GetPartyProfile,
     EA_GetPartyMembers = EA_GetPartyMembers,
     GetPartyMaxLevel = GetPartyMaxLevel,
     EA_IsAnyPartyInCombat = EA_IsAnyPartyInCombat,

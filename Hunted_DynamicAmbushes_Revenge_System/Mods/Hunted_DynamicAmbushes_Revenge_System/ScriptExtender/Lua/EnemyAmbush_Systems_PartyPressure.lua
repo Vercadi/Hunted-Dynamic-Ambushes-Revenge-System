@@ -149,7 +149,7 @@ function M.Build(deps)
             dynamicCap = math.min(dynamicCap, configuredBase)
         end
 
-        local finalCap = math.max(configuredBase, math.floor(dynamicCap + 0.5))
+        local finalCap = math.max(2, math.floor(dynamicCap + 0.5))
         return finalCap, capByParty, tierShift
     end
 

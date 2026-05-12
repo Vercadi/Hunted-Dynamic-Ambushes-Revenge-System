@@ -18,6 +18,8 @@ function M.Build(deps)
     local EA_GetPlayerFromCombat = deps.EA_GetPlayerFromCombat or function() return nil end
     local EA_JoinDeferredSupportsForAmbush = deps.EA_JoinDeferredSupportsForAmbush or function() end
     local EA_CleanupCombatEscapeStateIfIdle = deps.EA_CleanupCombatEscapeStateIfIdle or function() end
+    local EA_CleanupAbandonedCombatAmbushers = deps.EA_CleanupAbandonedCombatAmbushers or function() return 0 end
+    local EA_RememberLeftCombatAmbusher = deps.EA_RememberLeftCombatAmbusher or function() return false end
     local EA_ResetSoftlockIdleCounter = deps.EA_ResetSoftlockIdleCounter or function() return false end
     local EA_GetRuntimeTurnChatterMap = deps.EA_GetRuntimeTurnChatterMap or function() return {} end
     local EA_GetRuntimeEscapeStateMap = deps.EA_GetRuntimeEscapeStateMap or function() return {} end
@@ -26,6 +28,8 @@ function M.Build(deps)
     local EA_FindTurnChatterState = deps.EA_FindTurnChatterState or function() return nil, nil end
     local EA_CancelPendingEscape = deps.EA_CancelPendingEscape or function() return false end
     local EA_ResolvePendingEscapeAfterLeftCombat = deps.EA_ResolvePendingEscapeAfterLeftCombat or function() return false end
+    local EA_RecordCombatEnteredForPostCombatGrace = deps.EA_RecordCombatEnteredForPostCombatGrace or function() return false end
+    local EA_RecordCombatLeftForPostCombatGrace = deps.EA_RecordCombatLeftForPostCombatGrace or function() return false end
     local EA_TryAmbusherEscape = deps.EA_TryAmbusherEscape or function() return false end
     local EA_TrySoftlockDeleteOnTurn = deps.EA_TrySoftlockDeleteOnTurn or function() return false end
     local EA_MarkRuntimeStateDirty = deps.EA_MarkRuntimeStateDirty or function() end
@@ -62,10 +66,13 @@ function M.Build(deps)
         end
         return spawned
     end
+    local function EA_IsTableLike(value)
+        return type(value) == "table" or type(value) == "userdata"
+    end
 
     local EA_ARRIVAL_INVISIBILITY_STATUS = "EA_ARRIVAL_INVISIBLE"
     local function EA_ClearArrivalInvisibility(character, spawnedData, reason)
-        if not (character and character ~= "" and type(spawnedData) == "table") then
+        if not (character and character ~= "" and EA_IsTableLike(spawnedData)) then
             return false
         end
         if not (Osi and Osi.HasActiveStatus and Osi.RemoveStatus) then
@@ -108,6 +115,7 @@ function M.Build(deps)
             if character and character ~= "" then
                 pcall(EA_PrimeCharacterTemplateCache, character, "entered_combat")
             end
+            pcall(EA_RecordCombatEnteredForPostCombatGrace, character, combatGuid)
             local spawned = EA_GetSpawnedRegistry()
             if not spawned then
                 return
@@ -120,7 +128,7 @@ function M.Build(deps)
                 byMember[character] = normalizedCombat
             end
             local spawnedData = spawned[id] or spawned[character]
-            if not (type(spawnedData) == "table" and spawnedData.ambushId) then
+            if not EA_IsTableLike(spawnedData) then
                 return
             end
             EA_ClearArrivalInvisibility(character, spawnedData, "entered_combat")
@@ -134,15 +142,20 @@ function M.Build(deps)
                 EnemyAmbush._CombatKeyByAmbusher[character] = escapeKey
             end
             local player = EA_GetPlayerFromCombat(combatGuid, character)
-            EA_JoinDeferredSupportsForAmbush(spawnedData.ambushId, player, character, combatGuid)
+            if spawnedData.ambushId then
+                EA_JoinDeferredSupportsForAmbush(spawnedData.ambushId, player, character, combatGuid)
+            end
         end)
 
         EA_P0Inc("listenerReg.LeftCombat.after")
         Ext.Osiris.RegisterListener("LeftCombat", 2, "after", function(character, combatGuid)
             local id = EA_NormalizeUUID(character) or character
+            pcall(EA_RecordCombatLeftForPostCombatGrace, character, combatGuid)
             local spawned = EA_GetSpawnedRegistry()
             local spawnedData = spawned and (spawned[id] or spawned[character]) or nil
-            if type(spawnedData) == "table" then
+            EA_RememberLeftCombatAmbusher(character, combatGuid, spawnedData)
+            if EA_IsTableLike(spawnedData) then
+                spawnedData._eaLastCombatKey = EA_NormalizeCombatKey(combatGuid)
                 local resolvedStagedEscape = false
                 if spawnedData.escapePending == true then
                     resolvedStagedEscape = (EA_ResolvePendingEscapeAfterLeftCombat(character, combatGuid, "left_combat") == true)
@@ -163,6 +176,7 @@ function M.Build(deps)
                 EnemyAmbush._CombatKeyByMember[character] = nil
             end
             EA_CleanupCombatEscapeStateIfIdle(combatGuid)
+            EA_CleanupAbandonedCombatAmbushers(combatGuid, "left_combat")
         end)
 
         -- Reset per-ambusher idle softlock counters whenever real damage is exchanged.
@@ -214,7 +228,11 @@ function M.Build(deps)
             local escapeByCombat = EA_GetRuntimeEscapeStateMap()
             local hasChatter = (type(chatterByCombat) == "table" and next(chatterByCombat) ~= nil)
             local hasEscape = (type(escapeByCombat) == "table" and next(escapeByCombat) ~= nil)
-            if not hasChatter and not hasEscape then
+            local spawned = EA_GetSpawnedRegistry()
+            local turnId = EA_FastNormalizeUUID(turnCharacter) or EA_NormalizeUUID(turnCharacter) or turnCharacter
+            local spawnedData = spawned and (spawned[turnId] or spawned[turnCharacter]) or nil
+            local hasTrackedAmbusher = EA_IsTableLike(spawnedData)
+            if not hasChatter and not hasEscape and not hasTrackedAmbusher then
                 UpdateMetric("turnStartedFastExitNoActiveWork")
                 UpdateMetric("turnStartedFastExitNoActiveChatter")
                 return
@@ -226,21 +244,18 @@ function M.Build(deps)
             end
 
             local escapeKey, escapeState = EA_FindCombatEscapeState(combatKey)
-            local spawned = EA_GetSpawnedRegistry()
-            local turnId = EA_FastNormalizeUUID(turnCharacter) or EA_NormalizeUUID(turnCharacter) or turnCharacter
-            local spawnedData = spawned and (spawned[turnId] or spawned[turnCharacter]) or nil
             local escapedThisTurn = false
             if hasEscape and type(escapeState) == "table" then
                 escapeState.turnCount = (tonumber(escapeState.turnCount) or 0) + 1
                 escapeState.updatedAt = tonumber(EA_NowMs and EA_NowMs() or 0) or 0
                 EA_MarkRuntimeStateDirty()
-                if type(spawnedData) == "table" then
+                if EA_IsTableLike(spawnedData) then
                     escapedThisTurn = (EA_TryAmbusherEscape(turnCharacter, escapeKey or combatKey, escapeState) == true)
                 end
             end
 
             -- Softlock guard is intentionally one-candidate-per-turn: we only evaluate current turn actor.
-            if type(spawnedData) == "table" and not escapedThisTurn then
+            if EA_IsTableLike(spawnedData) and not escapedThisTurn then
                 if EA_TrySoftlockDeleteOnTurn(turnCharacter, escapeKey or combatKey, spawnedData) then
                     return
                 end

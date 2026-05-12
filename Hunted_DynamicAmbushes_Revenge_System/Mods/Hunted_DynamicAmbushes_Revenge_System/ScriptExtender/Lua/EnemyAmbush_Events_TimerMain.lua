@@ -1236,6 +1236,10 @@ function M.Build(deps)
             EA_LogRestFlow = EA_LogRestFlow,
             EA_TickTimeInDangerRisk = EA_TickTimeInDangerRisk,
             EA_TryTriggerTravelDangerAmbush = EA_TryTriggerTravelDangerAmbush,
+            EA_GetPostLoadAmbushGraceState = EA["EA_GetPostLoadAmbushGraceState"],
+            EA_GetPostCombatAmbushGraceState = EA["EA_GetPostCombatAmbushGraceState"],
+            EA_GetDialogueSafetyState = EA["EA_GetDialogueSafetyState"],
+            EA_DiagRecordRuntimeBlock = EA["EA_DiagRecordRuntimeBlock"],
             LONG_REST_SAFETY_DELAY = LONG_REST_SAFETY_DELAY,
             EA_REHYDRATE_READY_RETRY_MAX = EA_REHYDRATE_READY_RETRY_MAX,
             EA_REHYDRATE_READY_RETRY_MS = EA_REHYDRATE_READY_RETRY_MS,
@@ -1487,11 +1491,28 @@ function M.Build(deps)
         return false, "timer_flow_unavailable"
     end
     
-    local function EA_RequeueRuntimeReadyRetry(pending, timer, data, stage)
+    local function EA_RequeueRuntimeReadyRetry(pending, timer, data, stage, reason)
         if EventsTimerFlowRuntime and type(EventsTimerFlowRuntime.RequeueRuntimeReadyRetry) == "function" then
-            return EventsTimerFlowRuntime.RequeueRuntimeReadyRetry(pending, timer, data, stage)
+            return EventsTimerFlowRuntime.RequeueRuntimeReadyRetry(pending, timer, data, stage, reason)
         end
         return false
+    end
+
+    local function EA_RecordRuntimeReadyBlock(reason, stage, timer, data)
+        local fn = EA and EA["EA_DiagRecordRuntimeBlock"]
+        if type(fn) ~= "function" then
+            return false
+        end
+        local payload = (type(data) == "table" or type(data) == "userdata") and data or {}
+        local roll = (type(payload.roll) == "table" or type(payload.roll) == "userdata") and payload.roll or {}
+        pcall(fn, tostring(reason or "runtime_not_ready"), {
+            stage = tostring(stage or "runtime_ready"),
+            timer = tostring(timer or ""),
+            character = tostring(payload.character or ""),
+            ambushId = tostring(payload.ambushId or roll.ambushId or ""),
+            retryCount = tonumber(payload.runtimeReadyRetries) or 0,
+        })
+        return true
     end
 
     local function EA_TryHandlePersistentHostileRetry(timer)
@@ -1905,9 +1926,16 @@ function M.Build(deps)
                 return true
             end
 
-            local runtimeReady, _ = EA_IsRuntimeReadyForAmbush(char)
+            local runtimeReady, readyReason = EA_IsRuntimeReadyForAmbush(char)
             if not runtimeReady then
-                EA_RequeueRuntimeReadyRetry(pending, timer, data, "Spawn queue")
+                data.lastRuntimeReadyReason = tostring(readyReason or "runtime_not_ready")
+                data.lastRuntimeReadyAtMs = EA_NowMs()
+                if type(data.roll) == "table" or type(data.roll) == "userdata" then
+                    data.roll.lastRuntimeReadyReason = data.lastRuntimeReadyReason
+                    data.roll.lastRuntimeReadyAtMs = data.lastRuntimeReadyAtMs
+                end
+                EA_RecordRuntimeReadyBlock(readyReason, "Spawn queue", timer, data)
+                EA_RequeueRuntimeReadyRetry(pending, timer, data, "Spawn queue", readyReason)
                 return true
             end
 
@@ -1987,6 +2015,8 @@ function M.Build(deps)
                     queueStep = true,
                     queueState = data.queueState,
                     staggerMs = EA_GetStaggerStepMs(data.staggerMs),
+                    lastRuntimeReadyReason = data.lastRuntimeReadyReason,
+                    lastRuntimeReadyAtMs = data.lastRuntimeReadyAtMs,
                 }
             )
 
@@ -2075,15 +2105,22 @@ function M.Build(deps)
             return true
         end
 
-        local runtimeReady, _ = EA_IsRuntimeReadyForAmbush(char)
+        local runtimeReady, readyReason = EA_IsRuntimeReadyForAmbush(char)
         if not runtimeReady then
+            ambushData.lastRuntimeReadyReason = tostring(readyReason or "runtime_not_ready")
+            ambushData.lastRuntimeReadyAtMs = EA_NowMs()
+            if type(ambushData.roll) == "table" or type(ambushData.roll) == "userdata" then
+                ambushData.roll.lastRuntimeReadyReason = ambushData.lastRuntimeReadyReason
+                ambushData.roll.lastRuntimeReadyAtMs = ambushData.lastRuntimeReadyAtMs
+            end
+            EA_RecordRuntimeReadyBlock(readyReason, "Delayed ambush", timer, ambushData)
             local nextRuntimeReadyRetry = (tonumber(ambushData.runtimeReadyRetries) or 0) + 1
             if nextRuntimeReadyRetry > EA_REHYDRATE_READY_RETRY_MAX then
                 EA_ClearDelayedAmbushMirrorForTimer(timer)
             else
                 EA_TrackDelayedAmbushMirror(timer, ambushData)
             end
-            EA_RequeueRuntimeReadyRetry(pending, timer, ambushData, "Delayed ambush")
+            EA_RequeueRuntimeReadyRetry(pending, timer, ambushData, "Delayed ambush", readyReason)
             return true
         end
 
@@ -2108,6 +2145,8 @@ function M.Build(deps)
                     ambushTheme = ambushData.ambushTheme,
                     firstEnemy = ambushData.firstEnemy,
                     roll = ambushData.roll,
+                    lastRuntimeReadyReason = ambushData.lastRuntimeReadyReason,
+                    lastRuntimeReadyAtMs = ambushData.lastRuntimeReadyAtMs,
                     queueState = {},
                     staggerMs = staggerMs,
                     step = 0,
@@ -2140,6 +2179,8 @@ function M.Build(deps)
                 ambushData.roll,
                 {
                     staggerEnabled = false,
+                    lastRuntimeReadyReason = ambushData.lastRuntimeReadyReason,
+                    lastRuntimeReadyAtMs = ambushData.lastRuntimeReadyAtMs,
                 }
             )
             EA_OnDelayedAmbushComplete(char, ambushData, spawnedCount)

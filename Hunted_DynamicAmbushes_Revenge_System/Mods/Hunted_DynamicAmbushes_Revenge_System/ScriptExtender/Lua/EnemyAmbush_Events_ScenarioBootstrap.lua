@@ -200,6 +200,103 @@ function M.Build(deps)
         return raw
     end
 
+    local function AddUniqueBeachPartyMember(out, seen, member)
+        member = tostring(member or "")
+        if member == "" or seen[member] == true then
+            return
+        end
+        seen[member] = true
+        out[#out + 1] = member
+    end
+
+    local function IsSameBeachParty(anchor, member)
+        if not anchor or anchor == "" or not member or member == "" then
+            return true
+        end
+        if anchor == member then
+            return true
+        end
+        if Osi and Osi.IsInPartyWith then
+            local okParty, sameParty = pcall(Osi.IsInPartyWith, anchor, member)
+            if okParty then
+                return tonumber(sameParty) == 1
+            end
+        end
+        return true
+    end
+
+    local function GetBeachBootstrapPartyMembers(anchor)
+        local out = {}
+        local seen = {}
+        local scanAvailable = false
+
+        local helper = EA and EA["EA_GetPartyMembers"]
+        if type(helper) == "function" and anchor and anchor ~= "" then
+            local okParty, party = pcall(helper, anchor)
+            if okParty and type(party) == "table" then
+                scanAvailable = true
+                for _, member in ipairs(party) do
+                    AddUniqueBeachPartyMember(out, seen, member)
+                end
+            end
+        end
+
+        if Osi and Osi.DB_PartyMembers and Osi.DB_PartyMembers.Get then
+            local okRows, rows = pcall(function()
+                return Osi.DB_PartyMembers:Get(nil)
+            end)
+            if okRows and type(rows) == "table" then
+                scanAvailable = true
+                for _, row in ipairs(rows) do
+                    local member = tostring(row and row[1] or "")
+                    if member ~= "" and IsSameBeachParty(anchor, member) then
+                        AddUniqueBeachPartyMember(out, seen, member)
+                    end
+                end
+            end
+        end
+
+        if anchor and anchor ~= "" then
+            AddUniqueBeachPartyMember(out, seen, anchor)
+        end
+
+        return out, scanAvailable == true
+    end
+
+    local function GetBeachBootstrapPartyDoneStatus(anchor)
+        local members, scanAvailable = GetBeachBootstrapPartyMembers(anchor)
+        local checkedCount = #members
+
+        if scanAvailable ~= true then
+            return false, {
+                host = tostring(anchor or ""),
+                checkedCount = 0,
+                scanAvailable = false
+            }
+        end
+
+        for _, member in ipairs(members) do
+            local doneRaw = ReadHostVarString(member, EA_BEACH_BOOTSTRAP_DONE_VAR)
+            if IsTruthyVar(doneRaw) then
+                return true, {
+                    host = tostring(anchor or ""),
+                    matchedMember = tostring(member or ""),
+                    doneRaw = tostring(doneRaw or ""),
+                    reason = tostring(ReadHostVarString(member, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR) or ""),
+                    doneAt = tostring(ReadHostVarString(member, EA_BEACH_BOOTSTRAP_DONE_AT_VAR) or ""),
+                    checkedCount = checkedCount,
+                    scanAvailable = true
+                }
+            end
+        end
+
+        return false, {
+            host = tostring(anchor or ""),
+            checkedCount = checkedCount,
+            scanAvailable = true
+        }
+    end
+
     local function LogBeachBootstrapGateOnce(key, fmt, ...)
         key = tostring(key or "")
         if key == "" then
@@ -307,14 +404,22 @@ function M.Build(deps)
             }
         end
 
-        local doneRaw = ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_VAR)
-        if IsTruthyVar(doneRaw) then
-            return true, "host_var_done", {
-                host = tostring(host or ""),
-                doneRaw = tostring(doneRaw or ""),
-                reason = tostring(ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR) or ""),
-                doneAt = tostring(ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_AT_VAR) or "")
-            }
+        local partyDone, partyInfo = GetBeachBootstrapPartyDoneStatus(host)
+        if partyDone == true then
+            partyInfo = type(partyInfo) == "table" and partyInfo or {}
+            return true, "party_member_var_done", partyInfo
+        end
+
+        if not (type(partyInfo) == "table" and partyInfo.scanAvailable == true) then
+            local doneRaw = ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_VAR)
+            if IsTruthyVar(doneRaw) then
+                return true, "host_var_done", {
+                    host = tostring(host or ""),
+                    doneRaw = tostring(doneRaw or ""),
+                    reason = tostring(ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR) or ""),
+                    doneAt = tostring(ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_AT_VAR) or "")
+                }
+            end
         end
 
         local st = GetScriptedScenarioState()
@@ -336,11 +441,17 @@ function M.Build(deps)
         if (not hostCharacter or hostCharacter == "") and Osi and Osi.GetHostCharacter then
             hostCharacter = Osi.GetHostCharacter()
         end
+        local doneAt = tostring(tonumber(EA_NowMs and EA_NowMs() or 0) or 0)
 
-        if hostCharacter and hostCharacter ~= "" and Osi and Osi.SetVarString then
-            pcall(Osi.SetVarString, hostCharacter, EA_BEACH_BOOTSTRAP_DONE_VAR, "1")
-            pcall(Osi.SetVarString, hostCharacter, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR, tostring(reason or "scenario_completed"))
-            pcall(Osi.SetVarString, hostCharacter, EA_BEACH_BOOTSTRAP_DONE_AT_VAR, tostring(tonumber(EA_NowMs and EA_NowMs() or 0) or 0))
+        if Osi and Osi.SetVarString then
+            local members = GetBeachBootstrapPartyMembers(hostCharacter)
+            for _, member in ipairs(members or {}) do
+                if member and member ~= "" then
+                    pcall(Osi.SetVarString, member, EA_BEACH_BOOTSTRAP_DONE_VAR, "1")
+                    pcall(Osi.SetVarString, member, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR, tostring(reason or "scenario_completed"))
+                    pcall(Osi.SetVarString, member, EA_BEACH_BOOTSTRAP_DONE_AT_VAR, doneAt)
+                end
+            end
         end
 
         do
@@ -359,7 +470,7 @@ function M.Build(deps)
             return
         end
         if state.doneAt == nil then
-            state.doneAt = EA_NowMs()
+            state.doneAt = tonumber(doneAt) or EA_NowMs()
             state.host = tostring(hostCharacter or "")
             state.reason = tostring(reason or "scenario_completed")
             EA_Dirty(true)
@@ -465,7 +576,25 @@ function M.Build(deps)
                 tostring(info.doneAt or "")
             )
             MarkBeachBootstrapDone(host, "host_var_sync")
-        local stSync = GetScriptedScenarioState()
+            local stSync = GetScriptedScenarioState()
+            if type(stSync) == "table" and type(stSync.completed) == "table" and stSync.completed["EA_SCN_BEACH_WAKEUP"] == nil then
+                stSync.completed["EA_SCN_BEACH_WAKEUP"] = EA_NowMs()
+                EA_Dirty(true)
+            end
+            return true
+        end
+
+        if source == "party_member_var_done" then
+            LogBeachBootstrapGateOnce(
+                "party_member_var_done",
+                "Beach wake-up bootstrap skipped: party bootstrap done var already set (member=%s reason=%s doneAt=%s checked=%s)",
+                tostring(info.matchedMember or ""),
+                tostring(info.reason or ""),
+                tostring(info.doneAt or ""),
+                tostring(info.checkedCount or "")
+            )
+            MarkBeachBootstrapDone(host, "party_member_var_sync")
+            local stSync = GetScriptedScenarioState()
             if type(stSync) == "table" and type(stSync.completed) == "table" and stSync.completed["EA_SCN_BEACH_WAKEUP"] == nil then
                 stSync.completed["EA_SCN_BEACH_WAKEUP"] = EA_NowMs()
                 EA_Dirty(true)
@@ -621,6 +750,7 @@ function M.Build(deps)
         local bootstrapState = PeekBeachBootstrapState()
         local wakeupDone, wakeupSource = ReadStoryFlag(EA_FLAG_CRA_WAKEUP_DONE, host)
         local done, doneSource, doneInfo = GetBeachBootstrapDoneStatus()
+        local partyDone, partyDoneInfo = GetBeachBootstrapPartyDoneStatus(host)
         local tutorialShown = nil
         local scenarioCompletedAt = nil
         local safeToSpawn = nil
@@ -695,6 +825,12 @@ function M.Build(deps)
             hostDoneVar = ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_VAR),
             hostDoneReason = ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_REASON_VAR),
             hostDoneAt = ReadHostVarString(host, EA_BEACH_BOOTSTRAP_DONE_AT_VAR),
+            partyDone = partyDone == true,
+            partyDoneMember = type(partyDoneInfo) == "table" and partyDoneInfo.matchedMember or nil,
+            partyDoneReason = type(partyDoneInfo) == "table" and partyDoneInfo.reason or nil,
+            partyDoneAt = type(partyDoneInfo) == "table" and partyDoneInfo.doneAt or nil,
+            partyDoneCheckedCount = type(partyDoneInfo) == "table" and partyDoneInfo.checkedCount or nil,
+            partyDoneScanAvailable = type(partyDoneInfo) == "table" and partyDoneInfo.scanAvailable == true or false,
             done = done == true,
             doneSource = tostring(doneSource or ""),
             doneInfo = type(doneInfo) == "table" and doneInfo or {},

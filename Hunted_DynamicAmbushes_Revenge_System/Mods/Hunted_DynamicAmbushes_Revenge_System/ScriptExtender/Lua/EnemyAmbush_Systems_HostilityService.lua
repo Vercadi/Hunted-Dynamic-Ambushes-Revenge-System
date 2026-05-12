@@ -681,6 +681,41 @@ local function EA_CommandApproachAndStrike(enemy, player, tries, hostileState, a
     end
 end
 
+local function EA_IsOOSPlacementForHostility(data)
+    if type(data) ~= "table" then
+        return false
+    end
+    local mode = string.upper(tostring(data.placementMode or ""))
+    local source = string.lower(tostring(data.placementSource or ""))
+    return mode == "CREATE_OOS_ONLY" or source:find("oos", 1, true) ~= nil
+end
+
+local function EA_CleanupTrackedAmbusherForHostilityFailure(enemy, reason, spawnedData)
+    local cleanupReason = tostring(reason or "hostile_retry_exhausted")
+    local norm = EA_NormalizeUUID(enemy) or enemy
+    local spawned = EA_Spawned()
+    local data = spawnedData
+    if type(spawned) == "table" or type(spawned) == "userdata" then
+        data = data or spawned[norm] or spawned[enemy]
+        local cleanupFn = EA and EA["EA_DiagRecordCleanup"]
+        if type(cleanupFn) == "function" and type(data) == "table" then
+            pcall(cleanupFn, enemy, cleanupReason, data)
+        end
+        spawned[norm] = nil
+        spawned[enemy] = nil
+        if type(EA_Dirty) == "function" then
+            EA_Dirty()
+        end
+    end
+    if Osi and Osi.ObjectExists and Osi.ObjectExists(enemy) == 1 and Osi.RequestDelete then
+        pcall(Osi.RequestDelete, enemy)
+        if EA_HostilityDebugEnabled() then
+            print(string.format("[EnemyAmbush][Debug] Deleted stuck ambusher after %s: %s", cleanupReason, tostring(enemy)))
+        end
+    end
+    EA_ClearHostileState(enemy)
+end
+
 local function EA_PersistentHostileRetryQueue()
     local vars = EA_Vars and EA_Vars() or nil
     if not (((type(EA_IsModVarsContainer) == "function" and EA_IsModVarsContainer(vars)) or type(vars) == "table")) then
@@ -1033,11 +1068,13 @@ EA_MakeAmbushHostile = function(enemy, player)
     local ambushId = nil
     local disableAggressiveAdvance = false
     local forceCombatJoin = false
+    local spawnedDataForHostility = nil
     do
         local spawned = EA_Spawned and EA_Spawned() or nil
         if type(spawned) == "table" then
             local sd = spawned[enemyKey] or spawned[enemy]
             if type(sd) == "table" then
+                spawnedDataForHostility = sd
                 local aid = tostring(sd.ambushId or "")
                 if aid ~= "" then ambushId = aid end
                 disableAggressiveAdvance = (sd.disableAggressiveAdvance == true) or (sd.isChampion == true)
@@ -1045,6 +1082,7 @@ EA_MakeAmbushHostile = function(enemy, player)
             end
         end
     end
+    local oosPlacementForHostility = EA_IsOOSPlacementForHostility(spawnedDataForHostility)
     local joinWindow = nil
     local joinCombatKey = ""
     if ambushId then
@@ -1231,7 +1269,16 @@ EA_MakeAmbushHostile = function(enemy, player)
                 tostring(joinCombatKey)
             )
         end
-        st.tries[enemy] = math.min(2, st.tries[enemy] or 2)
+        if oosPlacementForHostility and tries >= MAX_TRIES then
+            UpdateMetric("hostileRetriesExhausted")
+            EA_SetLastError("OOSJoinFailed", "enemy=" .. tostring(enemy))
+            EA_LogEvent("HOSTILE_FAIL", "OOS join failed enemy=" .. tostring(enemy) .. " player=" .. tostring(player))
+            EA_CleanupTrackedAmbusherForHostilityFailure(enemy, "oos_join_failed", spawnedDataForHostility)
+            return
+        end
+        if not oosPlacementForHostility then
+            st.tries[enemy] = math.min(2, st.tries[enemy] or 2)
+        end
         if Ext and Ext.Timer and Ext.Timer.WaitFor then
             Ext.Timer.WaitFor(EA_HOSTILE_IN_COMBAT_RETRY_DELAY_MS, function()
                 if Osi.ObjectExists and Osi.ObjectExists(player) ~= 1 then
@@ -1281,22 +1328,10 @@ EA_MakeAmbushHostile = function(enemy, player)
 
     if tries >= MAX_TRIES then
         UpdateMetric("hostileRetriesExhausted")
-        EA_SetLastError("HostileRetriesExhausted", "enemy=" .. tostring(enemy))
-        EA_LogEvent("HOSTILE_FAIL", "Exhausted retries enemy=" .. tostring(enemy) .. " player=" .. tostring(player))
-        local norm = EA_NormalizeUUID(enemy) or enemy
-        local spawned = EA_Spawned()
-        if type(spawned) == "table" or type(spawned) == "userdata" then
-            spawned[norm] = nil
-            spawned[enemy] = nil
-            EA_Dirty()
-        end
-        if Osi and Osi.ObjectExists and Osi.ObjectExists(enemy) == 1 and Osi.RequestDelete then
-            pcall(Osi.RequestDelete, enemy)
-            if EA_HostilityDebugEnabled() then
-                print(string.format("[EnemyAmbush][Debug] Deleted stuck ambusher after hostile retry exhaustion: %s", tostring(enemy)))
-            end
-        end
-        EA_ClearHostileState(enemy)
+        local failReason = oosPlacementForHostility and "oos_join_failed" or "hostile_retry_exhausted"
+        EA_SetLastError(oosPlacementForHostility and "OOSJoinFailed" or "HostileRetriesExhausted", "enemy=" .. tostring(enemy))
+        EA_LogEvent("HOSTILE_FAIL", "Exhausted retries enemy=" .. tostring(enemy) .. " player=" .. tostring(player) .. " reason=" .. failReason)
+        EA_CleanupTrackedAmbusherForHostilityFailure(enemy, failReason, spawnedDataForHostility)
         return
     end
 

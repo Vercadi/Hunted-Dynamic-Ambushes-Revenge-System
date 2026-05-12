@@ -468,18 +468,6 @@ local XPCloneMap = {
         rewardLevels = {
         },
     },
-    ["1f18c106-1686-4bf0-b1eb-d5acc83d6e79"] = {
-        originalTemplate = "1f18c106-1686-4bf0-b1eb-d5acc83d6e79",
-        cloneTemplate = "a9641bbc-641c-9eb0-a46c-0ec1a2b2b4cc",
-        originalStat = "RedCap_Caster",
-        cloneStat = "EA_XP0_RedCap_Caster_55c4f131f4",
-        sourceStatReadable = false,
-        originalRewardGuid = nil,
-        cloneRewardGuid = "40806669-8c6b-4068-8bc4-07e4981bb020",
-        rewardReadable = false,
-        rewardLevels = {
-        },
-    },
     ["20be4f3e-4ff8-4d3e-9ebb-6ddbc9919396"] = {
         originalTemplate = "20be4f3e-4ff8-4d3e-9ebb-6ddbc9919396",
         cloneTemplate = "5918bf14-31e2-745e-f96f-adf2d5b0f642",
@@ -2105,18 +2093,6 @@ local XPCloneMap = {
         cloneTemplate = "885a0618-81df-ba4b-6234-9cd69cdbbd16",
         originalStat = "Sheep",
         cloneStat = "EA_XP0_Sheep_918bc5e86a",
-        sourceStatReadable = false,
-        originalRewardGuid = nil,
-        cloneRewardGuid = "40806669-8c6b-4068-8bc4-07e4981bb020",
-        rewardReadable = false,
-        rewardLevels = {
-        },
-    },
-    ["6f30fa2a-cf72-48b2-8d7f-aa38b2ca4547"] = {
-        originalTemplate = "6f30fa2a-cf72-48b2-8d7f-aa38b2ca4547",
-        cloneTemplate = "312b9b93-b97f-9044-de16-2d9620b199f7",
-        originalStat = "Familiar_Frog",
-        cloneStat = "EA_XP0_Familiar_Frog_a806fe5381",
         sourceStatReadable = false,
         originalRewardGuid = nil,
         cloneRewardGuid = "40806669-8c6b-4068-8bc4-07e4981bb020",
@@ -3750,18 +3726,6 @@ local XPCloneMap = {
         originalStat = "Human_Cultist_Bhaal_NightBlade",
         cloneStat = "EA_XP0_Human_Cultist_Bhaal_NightBlade_25ca492713",
         sourceStatReadable = false,
-        originalRewardGuid = nil,
-        cloneRewardGuid = "40806669-8c6b-4068-8bc4-07e4981bb020",
-        rewardReadable = false,
-        rewardLevels = {
-        },
-    },
-    ["d4edf374-6efe-463f-8899-889db26dee4e"] = {
-        originalTemplate = "d4edf374-6efe-463f-8899-889db26dee4e",
-        cloneTemplate = "41236bcd-2fb9-af8d-e388-27a831d009ab",
-        originalStat = "HAG_AuntieEthel",
-        cloneStat = "EA_XP0_HAG_AuntieEthel_327a619cf4",
-        sourceStatReadable = true,
         originalRewardGuid = nil,
         cloneRewardGuid = "40806669-8c6b-4068-8bc4-07e4981bb020",
         rewardReadable = false,

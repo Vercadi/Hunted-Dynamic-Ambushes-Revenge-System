@@ -1119,16 +1119,72 @@ local function EA_GetSessionStartupState()
     return state
 end
 
+function EA_SeedBeachEntryAmbushClock(character, levelName)
+    if tostring(levelName or "") ~= "WLD_Main_A" then
+        return false
+    end
+    if not character or character == "" then
+        return false
+    end
+    if Osi and Osi.IsPlayer then
+        local okPlayer, outPlayer = pcall(Osi.IsPlayer, character)
+        if (not okPlayer) or tonumber(outPlayer) ~= 1 then
+            return false
+        end
+    end
+    if type(GetSafeLevel) == "function" then
+        local okLevel, level = pcall(GetSafeLevel, character)
+        if okLevel and tonumber(level) and tonumber(level) > 3 then
+            return false
+        end
+    end
+
+    local key = EA_NormalizeUUID(character) or tostring(character)
+    if key == "" then
+        return false
+    end
+    EnemyAmbush._BeachEntryAmbushClockSeeded = EnemyAmbush._BeachEntryAmbushClockSeeded or {}
+    if type(EnemyAmbush._BeachEntryAmbushClockSeeded) ~= "table" then
+        EnemyAmbush._BeachEntryAmbushClockSeeded = {}
+    end
+    if EnemyAmbush._BeachEntryAmbushClockSeeded[key] == true then
+        return false
+    end
+    EnemyAmbush._BeachEntryAmbushClockSeeded[key] = true
+
+    local nowMs = EA_P0NowMs()
+    local resetDanger = EA_ResolveExportFn("EA_ResetTimeInDangerState", nil)
+    if type(resetDanger) == "function" then
+        pcall(resetDanger, character, "beach_entry")
+    end
+    local markPostLoadGrace = EA_ResolveExportFn("EA_MarkPostLoadAmbushGrace", nil)
+    if type(markPostLoadGrace) == "function" then
+        pcall(markPostLoadGrace, nowMs, "beach_entry")
+    end
+    if EA_DebugEnabled() then
+        DebugPrint(string.format(
+            "[Startup] Beach ambush clock seeded for %s at %dms",
+            tostring(character),
+            tonumber(nowMs) or 0
+        ))
+    end
+    return true
+end
+
 local function EA_QueueSessionStartup(source)
     if not (Ext and Ext.IsServer and Ext.IsServer()) then
         return false
     end
     local state = EA_GetSessionStartupState()
+    local nowMs = EA_P0NowMs()
+    local markPostLoadGrace = EA_ResolveExportFn("EA_MarkPostLoadAmbushGrace", nil)
+    if type(markPostLoadGrace) == "function" then
+        pcall(markPostLoadGrace, nowMs, tostring(source or "unknown"))
+    end
     if state.completed == true then
         return false
     end
 
-    local nowMs = EA_P0NowMs()
     local queuedAtMs = tonumber(state.queuedAtMs) or 0
     local isTimedOut = queuedAtMs > 0 and nowMs > 0 and (nowMs - queuedAtMs) >= 20000
     if state.queued == true and not isTimedOut then
@@ -1394,6 +1450,8 @@ if EventsCombatFlow and type(EventsCombatFlow.Build) == "function" then
         EA_ReadSettingBool = EA_ReadSettingBool,
         EA_ReadSettingNumber = EA_ReadSettingNumber,
         EA_PrimeCharacterTemplateCache = EA["EA_PrimeCharacterTemplateCache"],
+        EA_DiagRecordCleanup = EA["EA_DiagRecordCleanup"],
+        EA_DiagRecordOutcome = EA["EA_DiagRecordOutcome"],
     }
     EventsCombatFlowRuntime = EA_BuildRuntimeWithDeps("EventsCombatFlow", EventsCombatFlow, deps, {
         EnemyAmbush = "tablelike",
@@ -1424,6 +1482,8 @@ if EventsCombatTurnFlow and type(EventsCombatTurnFlow.Build) == "function" then
         EA_GetPlayerFromCombat = EA_GetPlayerFromCombat,
         EA_JoinDeferredSupportsForAmbush = EA_JoinDeferredSupportsForAmbush,
         EA_CleanupCombatEscapeStateIfIdle = combatFlowFns.CleanupCombatEscapeStateIfIdle,
+        EA_CleanupAbandonedCombatAmbushers = combatFlowFns.CleanupAbandonedCombatAmbushers,
+        EA_RememberLeftCombatAmbusher = combatFlowFns.RememberLeftCombatAmbusher,
         EA_ResetSoftlockIdleCounter = combatFlowFns.ResetSoftlockIdleCounter,
         EA_GetRuntimeTurnChatterMap = EA_GetRuntimeTurnChatterMap,
         EA_GetRuntimeEscapeStateMap = EA_GetRuntimeEscapeStateMap,
@@ -1432,6 +1492,8 @@ if EventsCombatTurnFlow and type(EventsCombatTurnFlow.Build) == "function" then
         EA_FindTurnChatterState = combatFlowFns.FindTurnChatterState,
         EA_CancelPendingEscape = combatFlowFns.CancelPendingEscape,
         EA_ResolvePendingEscapeAfterLeftCombat = combatFlowFns.ResolvePendingEscapeAfterLeftCombat,
+        EA_RecordCombatEnteredForPostCombatGrace = EA["EA_RecordCombatEnteredForPostCombatGrace"],
+        EA_RecordCombatLeftForPostCombatGrace = EA["EA_RecordCombatLeftForPostCombatGrace"],
         EA_TryAmbusherEscape = combatFlowFns.TryAmbusherEscape,
         EA_TrySoftlockDeleteOnTurn = combatFlowFns.TrySoftlockDeleteOnTurn,
         EA_MarkRuntimeStateDirty = EA_MarkRuntimeStateDirty,
@@ -1452,6 +1514,16 @@ if EventsCombatTurnFlow and type(EventsCombatTurnFlow.Build) == "function" then
         EA_Spawned = "callable",
         EA_NowMs = "callable",
     })
+    if EventsCombatFlowRuntime and type(EventsCombatFlowRuntime.DebugCleanupAbandonedCombatAmbushers) == "function" then
+        EA["EA_DebugCleanupAbandonedCombatAmbushers"] = function(combatGuid, force)
+            return EventsCombatFlowRuntime.DebugCleanupAbandonedCombatAmbushers(combatGuid, force == true)
+        end
+    end
+    if EventsCombatFlowRuntime and type(EventsCombatFlowRuntime.DebugCleanupAllTrackedAmbushers) == "function" then
+        EA["EA_DebugCleanupAllTrackedAmbushers"] = function()
+            return EventsCombatFlowRuntime.DebugCleanupAllTrackedAmbushers()
+        end
+    end
 end
 
 local function EA_PruneRuntimeCombatState(reason)
@@ -1508,6 +1580,7 @@ if EventsDiagnostics and type(EventsDiagnostics.Build) == "function" then
         PlayVFX_OnEntity = PlayVFX_OnEntity,
         EA_CanSpawnChampionForType = EA_CanSpawnChampionForType,
         EA_GetGuaranteedChampionQueueSafeFn = EA_GetGuaranteedChampionQueueSafeFn,
+        EA_DiagRecordOutcome = EA["EA_DiagRecordOutcome"],
         SaveReputation = SaveReputation,
         EA_ClearHostileState = EA_ClearHostileState,
         EA_OUT_OF_COMBAT_REP_WINDOW_MS = EA_OUT_OF_COMBAT_REP_WINDOW_MS,
@@ -1702,6 +1775,7 @@ local function EA_RegisterWorldRepAndTimerListeners()
                         end
                     end
                     if isPlayer then
+                        EA_SeedBeachEntryAmbushClock(objectGuid, levelName)
                         EA_TryEnsureBeachBootstrapStartedDelayed("entered_level_wld_main_a", 0)
                         local canonicalRegion = ""
                         local rawRegion = tostring(levelName or "")

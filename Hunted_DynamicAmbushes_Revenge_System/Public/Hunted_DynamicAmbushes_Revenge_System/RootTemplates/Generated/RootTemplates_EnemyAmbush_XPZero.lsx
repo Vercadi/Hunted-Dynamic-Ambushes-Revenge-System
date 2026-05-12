@@ -317,14 +317,6 @@
                     <attribute id="Stats" type="FixedString" value="EA_XP0_ShadowVine_489b5b4eac" />
                 </node>
                 <node id="GameObjects">
-                    <attribute id="MapKey" type="FixedString" value="a9641bbc-641c-9eb0-a46c-0ec1a2b2b4cc" />
-                    <attribute id="Name" type="LSString" value="EA_XP0_f5cee0cbabd1" />
-                    <attribute id="LevelName" type="FixedString" value="" />
-                    <attribute id="Type" type="FixedString" value="character" />
-                    <attribute id="ParentTemplateId" type="FixedString" value="1f18c106-1686-4bf0-b1eb-d5acc83d6e79" />
-                    <attribute id="Stats" type="FixedString" value="EA_XP0_RedCap_Caster_55c4f131f4" />
-                </node>
-                <node id="GameObjects">
                     <attribute id="MapKey" type="FixedString" value="5918bf14-31e2-745e-f96f-adf2d5b0f642" />
                     <attribute id="Name" type="LSString" value="EA_XP0_3e47cd9ded9e" />
                     <attribute id="LevelName" type="FixedString" value="" />
@@ -1413,14 +1405,6 @@
                     <attribute id="Stats" type="FixedString" value="EA_XP0_Sheep_918bc5e86a" />
                 </node>
                 <node id="GameObjects">
-                    <attribute id="MapKey" type="FixedString" value="312b9b93-b97f-9044-de16-2d9620b199f7" />
-                    <attribute id="Name" type="LSString" value="EA_XP0_f52f602bd7c9" />
-                    <attribute id="LevelName" type="FixedString" value="" />
-                    <attribute id="Type" type="FixedString" value="character" />
-                    <attribute id="ParentTemplateId" type="FixedString" value="6f30fa2a-cf72-48b2-8d7f-aa38b2ca4547" />
-                    <attribute id="Stats" type="FixedString" value="EA_XP0_Familiar_Frog_a806fe5381" />
-                </node>
-                <node id="GameObjects">
                     <attribute id="MapKey" type="FixedString" value="014caa62-987c-a28f-faf3-a7972602b3bf" />
                     <attribute id="Name" type="LSString" value="EA_XP0_ae62d405fbee" />
                     <attribute id="LevelName" type="FixedString" value="" />
@@ -2507,14 +2491,6 @@
                     <attribute id="Type" type="FixedString" value="character" />
                     <attribute id="ParentTemplateId" type="FixedString" value="d4509ded-17cd-4cf2-aeeb-58f1c1924f8e" />
                     <attribute id="Stats" type="FixedString" value="EA_XP0_Human_Cultist_Bhaal_NightBlade_25ca492713" />
-                </node>
-                <node id="GameObjects">
-                    <attribute id="MapKey" type="FixedString" value="41236bcd-2fb9-af8d-e388-27a831d009ab" />
-                    <attribute id="Name" type="LSString" value="EA_XP0_f2a1c47f6c26" />
-                    <attribute id="LevelName" type="FixedString" value="" />
-                    <attribute id="Type" type="FixedString" value="character" />
-                    <attribute id="ParentTemplateId" type="FixedString" value="d4edf374-6efe-463f-8899-889db26dee4e" />
-                    <attribute id="Stats" type="FixedString" value="EA_XP0_HAG_AuntieEthel_327a619cf4" />
                 </node>
                 <node id="GameObjects">
                     <attribute id="MapKey" type="FixedString" value="b34064cd-9080-a1ac-b547-ced06d60adae" />

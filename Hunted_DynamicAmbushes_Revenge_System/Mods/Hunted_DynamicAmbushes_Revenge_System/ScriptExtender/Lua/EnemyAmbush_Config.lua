@@ -90,6 +90,62 @@ local function EA_PersistNormalizedPresetToMCMIfNeeded(rawPresetValue)
     return true
 end
 
+local EA_GetRuntimeSetting
+local EA_ApplyRuntimeSettingsBatch
+local EA_PLACEMENT_OOS_MIGRATION_VERSION = "1.0.5"
+
+local function EA_MigrateSpawnPlacementModeToOOSIfNeeded()
+    local root = EA_GetPersistedSettingsRoot()
+    if not EA_ConfigIsModVarsContainer(root) then
+        return false
+    end
+
+    if tostring(root.EA_PlacementOOSMigrationVersion or "") == EA_PLACEMENT_OOS_MIGRATION_VERSION then
+        return false
+    end
+
+    local current = EA_NormalizePresetSettingForConfig(
+        "MCM_SpawnPlacementMode",
+        EA_GetRuntimeSetting("MCM_SpawnPlacementMode"),
+        "CREATE_OOS_ONLY"
+    )
+
+    if current ~= "AUTO" then
+        root.EA_PlacementOOSMigrationVersion = EA_PLACEMENT_OOS_MIGRATION_VERSION
+        if type(EA_Dirty) == "function" then
+            EA_Dirty()
+        end
+        return false
+    end
+
+    EA_ApplyRuntimeSettingsBatch({
+        { id = "MCM_SpawnPlacementMode", value = "CREATE_OOS_ONLY" },
+    }, { forceRefresh = true })
+
+    local savedToMCM = false
+    if MCM then
+        if type(MCM.Set) == "function" then
+            local okSet = pcall(MCM.Set, "MCM_SpawnPlacementMode", "CREATE_OOS_ONLY", ModuleUUID, true)
+            savedToMCM = savedToMCM or okSet == true
+        end
+        if type(MCM.SetSetting) == "function" then
+            local okSetSetting = pcall(MCM.SetSetting, "MCM_SpawnPlacementMode", "CREATE_OOS_ONLY", ModuleUUID, true)
+            savedToMCM = savedToMCM or okSetSetting == true
+        end
+    end
+
+    if savedToMCM then
+        root.EA_PlacementOOSMigrationVersion = EA_PLACEMENT_OOS_MIGRATION_VERSION
+        if type(EA_Dirty) == "function" then
+            EA_Dirty()
+        end
+        print("[EnemyAmbush][MCM] Migrated saved spawn placement from Auto to Create OOS Only.")
+    elseif EA_ConfigDebugEnabled() then
+        print("[EnemyAmbush][MCM] Spawn placement runtime migrated to Create OOS Only, but MCM save API was unavailable; will retry next load.")
+    end
+    return true
+end
+
 local EA_REQUIRED_MCM_DEFAULTS_APPLIED = false
 local EA_REQUIRED_MCM_MISSING_LOGGED = false
 
@@ -226,7 +282,7 @@ local function EA_SetRuntimeSetting(id, value)
     return value
 end
 
-local function EA_GetRuntimeSetting(id)
+function EA_GetRuntimeSetting(id)
     local getFn = EA and EA["EA_GetOwnedRuntimeSetting"]
     if type(getFn) == "function" then
         return getFn(id)
@@ -292,7 +348,7 @@ local function EA_ApplyRuntimeSetting(id, value, opts)
     }
 end
 
-local function EA_ApplyRuntimeSettingsBatch(entries, opts)
+function EA_ApplyRuntimeSettingsBatch(entries, opts)
     local applyFn = EA_ApplyOwnedRuntimeSettingsBatch or (EA and EA["EA_ApplyOwnedRuntimeSettingsBatch"])
     if type(applyFn) == "function" then
         return applyFn(entries, opts)
@@ -536,6 +592,8 @@ end
             EA_SyncAdvancedFromPreset()
         end
     end
+
+    EA_MigrateSpawnPlacementModeToOOSIfNeeded()
 
     -- Finally resolve CX mode (auto-detect unless user override exists)
     EA_ResolveCXMode()

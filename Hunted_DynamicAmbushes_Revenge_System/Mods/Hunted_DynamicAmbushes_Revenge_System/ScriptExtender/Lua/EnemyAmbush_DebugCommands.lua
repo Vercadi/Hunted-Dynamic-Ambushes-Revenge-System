@@ -49,6 +49,7 @@ local EA_PlaySoundEvent = EA["EA_PlaySoundEvent"]
 local PlayVFX_OnEntity = EA["PlayVFX_OnEntity"]
 local EA_GetCreatureReputationTable = EA["EA_GetCreatureReputationTable"]
 local EA_GetReputationThresholds = EA["EA_GetReputationThresholds"]
+local EA_PrintLastEncounterSummary = EA["EA_PrintLastEncounterSummary"]
 
 local function _EA_ResolveFn(name, fallbackFn)
     local fn = EA and EA[name]
@@ -831,7 +832,7 @@ end
 local function EA_GetSpawnedDataCompat(uuid)
     if not uuid or uuid == "" then return nil end
     local spawned = (type(EA_Spawned) == "function") and EA_Spawned() or nil
-    if type(spawned) ~= "table" then return nil end
+    if type(spawned) ~= "table" and type(spawned) ~= "userdata" then return nil end
     local norm = (EA_NormalizeUUID and EA_NormalizeUUID(uuid)) or uuid
     return spawned[norm] or spawned[uuid]
 end
@@ -852,11 +853,11 @@ end
 
 local function EA_FindAnyTrackedAmbusher()
     local spawned = (type(EA_Spawned) == "function") and EA_Spawned() or nil
-    if type(spawned) ~= "table" then
+    if type(spawned) ~= "table" and type(spawned) ~= "userdata" then
         return nil
     end
     for guid, data in pairs(spawned) do
-        if guid and guid ~= "" and type(data) == "table" then
+        if guid and guid ~= "" and (type(data) == "table" or type(data) == "userdata") then
             local exists = true
             if Osi and Osi.ObjectExists then
                 local okExists, outExists = pcall(Osi.ObjectExists, guid)
@@ -3524,6 +3525,128 @@ for k, v in pairs(PerformanceMetrics) do
     print(string.format("  %s: %s", k, tostring(v)))
 end
 
+elseif args[1] == "encountersummary" then
+local printSummaryFn = _EA_ResolveFn("EA_PrintLastEncounterSummary", EA_PrintLastEncounterSummary)
+if type(printSummaryFn) ~= "function" then
+    print("[EnemyAmbush] Encounter summary unavailable (EA_PrintLastEncounterSummary missing).")
+    return
+end
+local ok, err = pcall(printSummaryFn)
+if not ok then
+    print(string.format("[EnemyAmbush] Encounter summary failed: %s", tostring(err)))
+end
+
+elseif args[1] == "cleanupabandoned" then
+local cleanupFn = _EA_ResolveFn("EA_DebugCleanupAbandonedCombatAmbushers", nil)
+if type(cleanupFn) ~= "function" then
+    print("[EnemyAmbush] abandoned cleanup unavailable (EA_DebugCleanupAbandonedCombatAmbushers missing).")
+    return
+end
+local rawCombat = tostring(args[2] or "current")
+local rawMode = tostring(args[3] or "")
+local force = (string.lower(rawCombat) == "force" or string.lower(rawMode) == "force")
+local combatGuid = rawCombat
+local function EA_DebugAddCombatCandidate(out, seen, value)
+    if value == nil then
+        return
+    end
+    local v = tostring(value)
+    if v == "" or seen[v] then
+        return
+    end
+    seen[v] = true
+    out[#out + 1] = v
+end
+local function EA_DebugFindTrackedCombat()
+    local candidates = {}
+    local seen = {}
+    local function Add(value)
+        EA_DebugAddCombatCandidate(candidates, seen, value)
+    end
+    if Osi and Osi.GetCombatGroupID then
+        local okCombat, outCombat = pcall(Osi.GetCombatGroupID, player)
+        if okCombat then
+            Add(outCombat)
+        end
+    end
+    local playerId = (EA_NormalizeUUID and EA_NormalizeUUID(player)) or player
+    local byMember = EnemyAmbush and EnemyAmbush._CombatKeyByMember
+    if type(byMember) == "table" then
+        Add(byMember[playerId])
+        Add(byMember[player])
+        for _, value in pairs(byMember) do
+            Add(value)
+        end
+    end
+    local byAmbusher = EnemyAmbush and EnemyAmbush._CombatKeyByAmbusher
+    if type(byAmbusher) == "table" then
+        for _, value in pairs(byAmbusher) do
+            Add(value)
+        end
+    end
+    local spawned = (type(EA_Spawned) == "function") and EA_Spawned() or nil
+    if type(spawned) == "table" or type(spawned) == "userdata" then
+        for enemy, spawnedData in pairs(spawned) do
+            if type(spawnedData) == "table" or type(spawnedData) == "userdata" then
+                Add(spawnedData._eaSoftlockCombatKey)
+                Add(spawnedData.escapePendingCombatKey)
+                Add(spawnedData._eaLastCombatKey)
+                local id = (EA_NormalizeUUID and EA_NormalizeUUID(enemy)) or enemy
+                if Osi and Osi.IsInCombat and Osi.IsInCombat(id) == 1 and Osi.GetCombatGroupID then
+                    local okEnemyCombat, enemyCombat = pcall(Osi.GetCombatGroupID, id)
+                    if okEnemyCombat then
+                        Add(enemyCombat)
+                    end
+                end
+            end
+        end
+    end
+    return candidates[1]
+end
+if rawCombat == "" or string.lower(rawCombat) == "current" or string.lower(rawCombat) == "force" then
+    combatGuid = EA_DebugFindTrackedCombat()
+elseif string.lower(rawCombat) == "all" then
+    local cleanupAllFn = _EA_ResolveFn("EA_DebugCleanupAllTrackedAmbushers", nil)
+    if type(cleanupAllFn) ~= "function" then
+        print("[EnemyAmbush] cleanupabandoned all unavailable (EA_DebugCleanupAllTrackedAmbushers missing).")
+        return
+    end
+    local okAll, removedAll = pcall(cleanupAllFn)
+    if not okAll then
+        print(string.format("[EnemyAmbush] cleanupabandoned all failed: %s", tostring(removedAll)))
+        return
+    end
+    print(string.format("[EnemyAmbush] cleanupabandoned: combat=all force=true removed=%d", tonumber(removedAll) or 0))
+    return
+end
+if not combatGuid or combatGuid == "" then
+    if force then
+        local cleanupAllFn = _EA_ResolveFn("EA_DebugCleanupAllTrackedAmbushers", nil)
+        if type(cleanupAllFn) == "function" then
+            local okAll, removedAll = pcall(cleanupAllFn)
+            if not okAll then
+                print(string.format("[EnemyAmbush] cleanupabandoned force fallback failed: %s", tostring(removedAll)))
+                return
+            end
+            print(string.format("[EnemyAmbush] cleanupabandoned: combat=all-fallback force=true removed=%d", tonumber(removedAll) or 0))
+            return
+        end
+    end
+    print("[EnemyAmbush] cleanupabandoned: no combat id found. Usage: !ea_test cleanupabandoned [current|combatGuid|all] [force]")
+    return
+end
+local okCleanup, removed = pcall(cleanupFn, combatGuid, force)
+if not okCleanup then
+    print(string.format("[EnemyAmbush] cleanupabandoned failed: %s", tostring(removed)))
+    return
+end
+print(string.format(
+    "[EnemyAmbush] cleanupabandoned: combat=%s force=%s removed=%d",
+    tostring(combatGuid),
+    tostring(force),
+    tonumber(removed) or 0
+))
+
 elseif args[1] == "telemetry" then
 local action = string.lower(tostring(args[2] or "show"))
 if action == "on" then
@@ -3958,7 +4081,7 @@ local arrivalCuePolicyEffective = callString(getArrivalCuePolicyFn, arrivalCuePo
 local arrivalCuePolicyRawLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyRaw, arrivalCuePolicyRaw)
 local arrivalCuePolicyEffectiveLabel = callLabel(getArrivalCuePolicyLabelFn, arrivalCuePolicyEffective, arrivalCuePolicyEffective)
 local arrivalCueChanceScaleRaw = math.floor(math.max(0, math.min(200, tonumber(getSetting("MCM_ArrivalCueChanceScale", 100)) or 100)))
-local spawnPlacementModeRaw = tostring(getSetting("MCM_SpawnPlacementMode", "AUTO"))
+local spawnPlacementModeRaw = tostring(getSetting("MCM_SpawnPlacementMode", "CREATE_OOS_ONLY"))
 local spawnPlacementModeEffective = callString(getSpawnPlacementModeFn, spawnPlacementModeRaw)
 local spawnPlacementModeRawLabel = callLabel(getSpawnPlacementModeLabelFn, spawnPlacementModeRaw, spawnPlacementModeRaw)
 local spawnPlacementModeEffectiveLabel = callLabel(getSpawnPlacementModeLabelFn, spawnPlacementModeEffective, spawnPlacementModeEffective)
@@ -4162,6 +4285,15 @@ else
             show(info.hostDoneAt)
         ))
         print(string.format(
+            "  partyDone: done=%s member=%s reason=%s doneAt=%s checked=%s scan=%s",
+            show(info.partyDone),
+            show(info.partyDoneMember),
+            show(info.partyDoneReason),
+            show(info.partyDoneAt),
+            show(info.partyDoneCheckedCount),
+            show(info.partyDoneScanAvailable)
+        ))
+        print(string.format(
             "  persistent: doneAt=%s reason=%s host=%s wakeupDoneSeenAt=%s",
             show(info.stateDoneAt),
             show(info.stateReason),
@@ -4304,6 +4436,7 @@ print("  !ea_test escapepreview [target] [vfx] [sfx] [deleteMs] - Quick escape c
 print("  !ea_test escapetune quick|default|show - Toggle fast escape test tuning")
 print("  !ea_test hasteall on|off|show - Debug: apply 1-turn HASTE to all ambushers")
 print("  !ea_test spawnhostile - Hostility-only debug spawn (no ambush status/reward pipeline)")
+print("  !ea_test cleanupabandoned [current|combatGuid|all] [force] - Debug: cleanup tracked Hunted ambushers")
 print("  !ea_test hostile <uuid> - Make specific enemy hostile")
 print("  !ea_test attack <uuid> - Force enemy to attack a nearby player (debug)")
 print("  !ea_test list - List ACTIVE enemies (after providers + toggles)")
@@ -4318,6 +4451,7 @@ print("  !ea_test clearcache - Clear summon pool + weighted cache")
 print("  !ea_test providerprobe [show|register|edit|unregister|cycle] - Exercise EnemyProvidersChanged via a temporary provider")
 print("  !ea_test api [show|authored_smoke|trigger_smoke] - D2 authored API export/status smoke commands")
 print("  !ea_test metrics - Show performance metrics")
+print("  !ea_test encountersummary - Print the last finalized encounter summary, or the active one if no finalized summary exists")
 print("  !ea_test telemetry on|off|show|dump - Control and inspect debug telemetry")
 print("  !ea_test xpclones export - Export live template->stat source data for the XP-zero clone generator")
 print("  !ea_test phase0 [show|reset] - Inspect or reset Phase 0 session/load + listener registration counters")

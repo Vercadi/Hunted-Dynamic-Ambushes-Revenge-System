@@ -89,6 +89,10 @@ function M.Build(deps)
     local EA_ApplyNoLootFlags = deps.EA_ApplyNoLootFlags or function() end
     local EA_Dirty = deps.EA_Dirty or function() end
     local EA_LogChampionDiagnostics = deps.EA_LogChampionDiagnostics or function() end
+    local EA_DiagBeginEncounter = deps.EA_DiagBeginEncounter or (EA and EA["EA_DiagBeginEncounter"]) or function() return nil end
+    local EA_DiagRecordEncounterSpawn = deps.EA_DiagRecordEncounterSpawn or (EA and EA["EA_DiagRecordEncounterSpawn"]) or function() return false end
+    local EA_DiagRecordEncounterFailure = deps.EA_DiagRecordEncounterFailure or (EA and EA["EA_DiagRecordEncounterFailure"]) or function() return false end
+    local EA_DiagFinalizeEncounter = deps.EA_DiagFinalizeEncounter or (EA and EA["EA_DiagFinalizeEncounter"]) or function() return false end
     local CreatureReputation = deps.CreatureReputation or {}
     local REPUTATION_THRESHOLDS = deps.REPUTATION_THRESHOLDS or {}
     local EA_CanSpawnChampionForType = deps.EA_CanSpawnChampionForType or function() return true end
@@ -97,6 +101,9 @@ function M.Build(deps)
         or function() return 0 end
     local EA_BAD_CHAMPION_TEMPLATES = deps.EA_BAD_CHAMPION_TEMPLATES
         or (SystemsDataTables and SystemsDataTables.BAD_CHAMPION_TEMPLATES)
+        or {}
+    local EA_CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE = deps.EA_CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE
+        or (SystemsDataTables and SystemsDataTables.CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE)
         or {}
 
     local runtime = {}
@@ -140,6 +147,14 @@ function M.Build(deps)
     local function EA_IsBadChampionTemplate(template)
         if not template or template == "" then return true end
         return EA_BAD_CHAMPION_TEMPLATES[string.lower(tostring(template))] == true
+    end
+
+    local function EA_IsChampionTypeWithoutSafeCandidate(creatureType)
+        local key = tostring(creatureType or "")
+        if key == "" then return false end
+        return EA_CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE[key] == true
+            or EA_CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE[string.lower(key)] == true
+            or EA_CHAMPION_TYPES_WITHOUT_SAFE_CANDIDATE[string.upper(key)] == true
     end
 
     local function EA_MakeChampionResolveResult(source, reason, providerId, champion, policy)
@@ -889,7 +904,7 @@ function M.Build(deps)
         return selected, plan, nil
     end
 
-    local function EA_SpawnChampionRetinue(player, creatureType, champion, championLevel)
+    local function EA_SpawnChampionRetinue(player, creatureType, champion, championLevel, diagRecordId)
         if type(SpawnHostileNearPlayer) ~= "function" then
             EA_DebugChampionRetinue("[ChampionRetinue] SpawnHostileNearPlayer dependency unavailable")
             return
@@ -924,6 +939,7 @@ function M.Build(deps)
                     spawnDist = (tier == "ELITE") and 16 or 14,
                     championRetinue = true,
                     retinueFamily = tostring(plan.family or ""),
+                    diagRecordId = diagRecordId,
                 }
 
                 local spawned = SpawnHostileNearPlayer(player, 600, entry, roll, tostring(entry.creatureType or creatureType or ""))
@@ -1094,7 +1110,9 @@ function M.Build(deps)
             providerRejectedReason = "provider_rejected_bad_template"
         end
 
+        local noSafeChampionCandidate = (not champion) and EA_IsChampionTypeWithoutSafeCandidate(creatureType)
         local allowActiveSummonFallback = fallbackPolicy.allowFallback
+            and not noSafeChampionCandidate
             and not EA_IsChampionProviderRejectedByLevelGate(providerRejectedReason)
 
         if (not champion) and allowActiveSummonFallback and EA_GetPoolActiveSummonList then
@@ -1170,6 +1188,10 @@ function M.Build(deps)
             return EA_MakeChampionResolveResult("none", providerRejectedReason or "provider_rejected_no_fallback", providerId, nil, effectivePolicy)
         end
 
+        if noSafeChampionCandidate then
+            return EA_MakeChampionResolveResult("none", "no_safe_champion_candidate", providerId, nil, effectivePolicy)
+        end
+
         if fallbackCandidateRejected then
             return EA_MakeChampionResolveResult("none", "fallback_candidate_rejected", nil, nil, effectivePolicy)
         end
@@ -1185,6 +1207,18 @@ function M.Build(deps)
         resolution = EA_RecordChampionResolveTelemetry(creatureType, resolution, telemetryContext)
         local champion = resolution.champion
         local fallbackReason = (resolution.source == "summon_fallback") and resolution.reason or nil
+        local diagRecordId = EA_DiagBeginEncounter({
+            sourceFlow = "Champion",
+            flowLabel = "Champion",
+            character = player,
+            isLongRest = true,
+            partyLevel = GetPartyMaxLevel(player),
+            partySize = GetPartySize(player),
+            requestedTier = "CHAMPION",
+            requestedTheme = creatureType,
+            placementMode = "champion",
+            preset = tostring(EA_ReadSettingRaw("MCM_DifficultyPreset", "")),
+        })
 
         if champion and champion.template and champion.template ~= "" then
             champion.vfx = champion.vfx or champion.spawnVFX or EnemyData.DEFAULT_SPAWN_VFX
@@ -1200,6 +1234,13 @@ function M.Build(deps)
         end
 
         if not champion then
+            EA_DiagRecordEncounterFailure(diagRecordId, "no_champion_configuration", {
+                creatureType = creatureType,
+            })
+            EA_DiagFinalizeEncounter(diagRecordId, {
+                totalSpawned = 0,
+                stopReason = "no_champion_configuration",
+            })
             print(string.format(
                 "[EnemyAmbush] No champion configuration for type %s (vanillaSummons=%s debugMode=%s)",
                 tostring(creatureType),
@@ -1211,6 +1252,14 @@ function M.Build(deps)
 
         local x, y, z = SafeGetPosition(player)
         if not x then
+            EA_DiagRecordEncounterFailure(diagRecordId, "missing_player_position", {
+                creatureType = creatureType,
+                template = champion.template,
+            })
+            EA_DiagFinalizeEncounter(diagRecordId, {
+                totalSpawned = 0,
+                stopReason = "missing_player_position",
+            })
             print("[EnemyAmbush] ERROR: Could not get player position for champion spawn")
             return false
         end
@@ -1233,6 +1282,15 @@ function M.Build(deps)
                     EA_RecordSpawnFailure("ChampionXPCloneCoverageMissing template=" .. tostring(champion.template) .. " type=" .. tostring(creatureType))
                 end
                 DebugPrint("Champion XP clone coverage missing:", tostring(champion.name or creatureType), tostring(champion.template))
+                EA_DiagRecordEncounterFailure(diagRecordId, "champion_xp_clone_coverage_missing", {
+                    creatureType = creatureType,
+                    name = champion.name,
+                    template = champion.template,
+                })
+                EA_DiagFinalizeEncounter(diagRecordId, {
+                    totalSpawned = 0,
+                    stopReason = "champion_xp_clone_coverage_missing",
+                })
                 return false
             end
             championSpawnTemplate = championCloneRecord.cloneTemplate
@@ -1371,6 +1429,16 @@ function M.Build(deps)
             UpdateMetric("championsFailed")
             EA_SetLastError("ChampionSpawnFailed", "template=" .. tostring(championSpawnTemplate) .. " type=" .. tostring(creatureType))
             EA_LogEvent("CHAMPION_FAIL", "Failed after robust placement template=" .. tostring(championSpawnTemplate))
+            EA_DiagRecordEncounterFailure(diagRecordId, "champion_spawn_failed", {
+                creatureType = creatureType,
+                name = champion.name,
+                template = championOriginalTemplate,
+                spawnTemplate = championSpawnTemplate,
+            })
+            EA_DiagFinalizeEncounter(diagRecordId, {
+                totalSpawned = 0,
+                stopReason = "champion_spawn_failed",
+            })
             if EA_RecordSpawnFailure then
                 EA_RecordSpawnFailure("ChampionSpawn template=" .. tostring(championSpawnTemplate) .. " type=" .. tostring(creatureType))
             end
@@ -1579,6 +1647,11 @@ function M.Build(deps)
                     disableAggressiveAdvance = true,
                     xpRewardCategory = championRewardCat,
                     spawnTemplate = championSpawnTemplate,
+                    diagRecordId = diagRecordId,
+                    placementSource = "champion",
+                    spawnX = spawnX,
+                    spawnY = spawnY,
+                    spawnZ = spawnZ,
                     tsCreated = EA_NowMs(),
                     lastSeen = EA_NowMs(),
                 }
@@ -1605,9 +1678,45 @@ function M.Build(deps)
             SafeOsiExec(Osi.PlaySound, player, "UI_Notification_CombatStarted")
         end
 
-        EA_SpawnChampionRetinue(player, creatureType, champion, championLevel)
+        local championSpawnDistance2D = nil
+        local championHeightDelta = nil
+        if spawnX and spawnZ and x and z then
+            local dx = (tonumber(spawnX) or 0) - (tonumber(x) or 0)
+            local dz = (tonumber(spawnZ) or 0) - (tonumber(z) or 0)
+            championSpawnDistance2D = math.sqrt((dx * dx) + (dz * dz))
+        end
+        if spawnY and y then
+            championHeightDelta = math.abs((tonumber(spawnY) or 0) - (tonumber(y) or 0))
+        end
+        EA_DiagRecordEncounterSpawn(diagRecordId, {
+            enemy = enemy,
+            name = champion.name or "Champion",
+            creatureType = creatureType,
+            tier = "CHAMPION",
+            powerClass = "CHAMPION",
+            spawnRole = "champion",
+            template = championOriginalTemplate,
+            spawnTemplate = championSpawnTemplate,
+            scaledLevel = championLevel,
+            templateLevel = champion.level,
+            xpPct = championXpPct,
+            noLoot = not EA_GetEffectiveAllowChampionLoot(),
+            isChampion = true,
+            placementSource = "champion",
+            placementMode = "champion",
+            spawnDistance2D = championSpawnDistance2D,
+            spawnHeightDelta = championHeightDelta,
+        })
+
+        EA_SpawnChampionRetinue(player, creatureType, champion, championLevel, diagRecordId)
 
         print(string.format("[EnemyAmbush] Champion arrived: %s (%s reputation, Level %d)", champion.name, creatureType, championLevel))
+        EA_DiagFinalizeEncounter(diagRecordId, {
+            totalSpawned = 1,
+            totalCost = 0,
+            stopReason = "champion_spawned",
+            firstSpawnType = creatureType,
+        })
         return true
     end
 

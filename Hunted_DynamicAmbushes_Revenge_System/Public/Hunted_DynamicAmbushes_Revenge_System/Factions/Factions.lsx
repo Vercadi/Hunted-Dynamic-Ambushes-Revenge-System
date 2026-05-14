@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<save>
+  <version major="4" minor="5" revision="0" build="300"/>
+  <region id="FactionContainer">
+    <node id="root">
+      <children>
+        <node id="Faction">
+          <attribute id="Faction" type="FixedString" value="EA_AMBUSHERS"/>
+          <attribute id="ParentGuid" type="guid" value="00000000-0000-0000-0000-000000000000"/>
+          <attribute id="UUID" type="guid" value="2b1660d2-9742-4217-91cc-24d1421c9772"/>
+        </node>
+      </children>
+    </node>
+  </region>
+</save>

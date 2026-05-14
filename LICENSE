@@ -1,0 +1,18 @@
+Copyright (c) 2026 Vercadi
+
+This repository is source-available for reference, compatibility work, and personal use.
+
+You may:
+- inspect and learn from the source
+- make private personal modifications
+- create compatibility patches or integrations that depend on this mod
+
+You may not, without explicit permission:
+- redistribute this mod or modified versions
+- reupload it to Nexus, GitHub, mod packs, or other platforms
+- use the Hunted name, branding, assets, or package identity for a derivative release
+- sell or monetize this mod or modified versions
+
+Compatibility patches must require the original mod and must not include substantial copied source or packaged assets.
+
+This license does not grant rights to Baldur's Gate 3, Larian Studios assets, or third-party dependencies.
